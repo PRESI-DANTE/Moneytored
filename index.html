@@ -51,15 +51,6 @@
       --modal-overlay: rgba(15, 23, 42, 0.5);
     }
 
-    /* In light mode, make the "+ New Goal" / "+ New Debt" action buttons match
-       the accent color already used by "+ Set Budget" and the home "+ Add
-       Account" badge, so all primary "add" actions look consistent. */
-    body.light-theme .btn-sm:not(.btn-danger) {
-      background: var(--accent-gradient);
-      color: #000;
-      border-color: transparent;
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
@@ -230,46 +221,6 @@
       border-radius: 4px;
     }
 
-    /* Standalone Add Account Button Block */
-    .add-account-block {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 18px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
-    }
-
-    .add-account-block:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--accent-primary);
-    }
-
-    .add-account-icon-badge {
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      background: var(--accent-gradient);
-      color: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-      font-weight: 800;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-
-    .add-account-text {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
     /* Section Cards */
     .card {
       background: var(--bg-card);
@@ -289,40 +240,6 @@
       align-items: center;
     }
 
-    .center-header-block {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      gap: 8px;
-      text-align: center;
-    }
-
-    /* Wallets Grid */
-    .wallets-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 10px;
-    }
-
-    .wallet-card-item {
-      background: var(--bg-input);
-      border: 1px solid var(--border-color);
-      border-radius: 14px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .wallet-card-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
     .wallet-brand-meta {
       display: flex;
       align-items: center;
@@ -337,8 +254,6 @@
       flex-shrink: 0;
     }
 
-    .wallet-card-title { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .wallet-card-val { font-size: 0.92rem; font-weight: 700; color: var(--text-main); }
     .wallet-cat-tag { font-size: 0.58rem; color: var(--accent-primary); font-weight: 700; text-transform: uppercase; }
 
     /* Segmented Control */
@@ -400,21 +315,6 @@
       font-size: 0.85rem;
       cursor: pointer;
     }
-
-    /* Lists */
-    .goal-list, .debt-list, .budget-list { display: flex; flex-direction: column; gap: 10px; }
-    .goal-item, .debt-item, .budget-item {
-      background: var(--bg-input);
-      border: 1px solid var(--border-color);
-      border-radius: 14px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .goal-header, .debt-header, .budget-header { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.88rem; }
-    .debt-meta-badge { color: var(--debt-color); font-size: 0.7rem; display: flex; gap: 8px; flex-wrap: wrap; font-weight: 600; }
 
     /* History Filters */
     .filter-box { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -649,6 +549,146 @@
     .btn-sm { background: var(--bg-card-hover); border: 1px solid var(--border-color); color: var(--text-main); padding: 4px 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.72rem; }
     .btn-sm.btn-danger { color: var(--expense-color); }
     .btn-group-sm { display: flex; gap: 4px; }
+
+    /* ==========================================================================
+       INTERACTIVE ENTRY GRID
+       Shared layout for Accounts / Budgets / Goals / Loans. Saved entries and
+       the "add new entry" tile live side by side on the SAME layer. The add
+       tile is pinned to the last column (grid-column: -2 / -1) so it always
+       sits on the bottom-right of the layer, and the tiles auto-shrink
+       (padding + type scale, and an extra column for accounts) as more
+       entries are added.
+       ========================================================================== */
+    .entry-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    /* Auto-shrink steps driven by entry count (applied in applyGridDensity) */
+    .entry-grid.dense { gap: 8px; }
+    .entry-grid.dense .entry-tile,
+    .entry-grid.dense .add-tile { padding: 9px; }
+    .entry-grid.dense .entry-tile-title { font-size: 0.72rem; }
+    .entry-grid.dense .entry-tile-value { font-size: 0.8rem; }
+    .entry-grid.denser { grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+    .entry-grid.denser .entry-tile,
+    .entry-grid.denser .add-tile { padding: 8px; }
+    .entry-grid.denser .entry-tile-title { font-size: 0.66rem; }
+    .entry-grid.denser .entry-tile-value { font-size: 0.74rem; }
+    .entry-grid.denser .entry-tile-meta,
+    .entry-grid.denser .entry-tile-sub { font-size: 0.6rem; }
+
+    /* Saved entry tile */
+    .entry-tile {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .entry-tile-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .entry-tile-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-main);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .entry-tile-value { font-size: 0.86rem; font-weight: 700; color: var(--text-main); }
+    .entry-tile-sub { font-size: 0.66rem; color: var(--text-muted); font-weight: 600; }
+    .entry-tile-meta { font-size: 0.62rem; color: var(--text-muted); font-weight: 600; line-height: 1.35; }
+
+    .btn-icon-sm {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.72rem;
+      padding: 1px 3px;
+      border-radius: 6px;
+      line-height: 1;
+    }
+
+    .btn-icon-sm:hover { background: var(--bg-card-hover); color: var(--text-main); }
+    .btn-icon-sm.danger:hover { color: var(--expense-color); }
+
+    .entry-tile-action {
+      background: var(--bg-card-hover);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: 9px;
+      padding: 5px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .entry-tile-action:hover { border-color: var(--accent-primary); }
+
+    /* "Add new entry" tile — pinned bottom-right of the same layer */
+    .add-tile {
+      grid-column: -2 / -1;
+      background: var(--bg-input);
+      border: 1px dashed var(--border-color);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      min-height: 84px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .add-tile:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-primary);
+    }
+
+    /* No entries yet: let the add tile take the full width of the layer */
+    .entry-grid.is-empty .add-tile { grid-column: 1 / -1; }
+
+    .add-tile-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      background: var(--accent-gradient);
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+
+    .add-tile-label { font-size: 0.72rem; font-weight: 700; color: var(--text-main); text-align: center; }
+
+    body.light-theme .add-tile-icon {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      box-shadow: none;
+    }
   </style>
 </head>
 <body>
@@ -695,19 +735,15 @@
         </div>
       </section>
 
-      <!-- Standalone Add Account Button Block (On its own row) -->
-      <section class="add-account-block" onclick="openCategorizedAccountsModal()">
-        <div class="add-account-icon-badge">+</div>
-        <span class="add-account-text">Add Account</span>
-      </section>
-
-      <!-- User Active Created Accounts Grid -->
+      <!-- Active Accounts Layer:
+           saved account tiles + the "Add Account" tile share one layer,
+           side by side. The add tile is pinned to the bottom-right. -->
       <section class="card">
         <div class="card-title">
           <span>Active Accounts</span>
           <span style="font-size: 0.72rem; color: var(--text-muted);" id="activeAccountCount">0 Accounts</span>
         </div>
-        <div class="wallets-grid" id="walletsList"></div>
+        <div class="entry-grid" id="walletsList"></div>
       </section>
 
       <!-- Transactions History Section -->
@@ -762,86 +798,31 @@
         </div>
       </section>
 
-      <!-- Category Budget Limits Section (+ Set Budget centered) -->
-      <section class="card">
-        <div class="center-header-block">
-          <button class="btn-submit" onclick="toggleBudgetForm()">+ Set Budget</button>
-        </div>
-
-        <div id="budgetForm" style="display: none;" class="form-grid">
-          <select id="budgetCategory" class="form-full">
-            <option value="Bills">Bills</option>
-            <option value="Education">Education</option>
-            <option value="Entertainment">Entertainment</option>
-            <option value="Financial & Debt">Financial & Debt</option>
-            <option value="Food & Dining">Food & Dining</option>
-            <option value="Health & Personal Care">Health & Personal Care</option>
-            <option value="Housing & Utilities">Housing & Utilities</option>
-            <option value="Investment">Investment</option>
-            <option value="Others">Others</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Transportation">Transportation</option>
-            <option value="Travel">Travel</option>
-          </select>
-          <input type="number" id="budgetAmount" placeholder="Monthly Limit (₱)" step="0.01" class="form-full" />
-          <button class="btn-submit" onclick="saveBudget()">Save Budget Limit</button>
-          <button class="btn-secondary" onclick="toggleBudgetForm()">Cancel</button>
-        </div>
-
-        <div class="budget-list" id="budgetList"></div>
-      </section>
-
-      <!-- Savings Goals Section (Savings Goals title centered, + New Goal underneath) -->
-      <section class="card">
-        <div class="center-header-block">
-          <span style="font-size: 1rem; font-weight: 800;">Savings Goals</span>
-          <button class="btn-sm" style="padding: 8px 16px; font-size: 0.8rem;" onclick="toggleGoalForm()">+ New Goal</button>
-        </div>
-
-        <div id="goalForm" style="display: none;" class="form-grid">
-          <input type="text" id="goalTitle" placeholder="Goal Name (e.g. New Laptop)" class="form-full" />
-          <input type="number" id="goalTarget" placeholder="Target Amount" />
-          <div>
-            <label style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Target Date:</label>
-            <input type="date" id="goalTargetDate" style="width: 100%;" />
-          </div>
-          <button class="btn-submit" onclick="addGoal()">Save Goal</button>
-          <button class="btn-secondary" onclick="toggleGoalForm()">Cancel</button>
-        </div>
-
-        <div class="goal-list" id="goalList"></div>
-      </section>
-
-      <!-- Debt & Loan Ledger Section -->
+      <!-- Category Budget Limits Layer: saved budgets + "Set Budget" tile -->
       <section class="card">
         <div class="card-title">
-          <span>Debt & Loan Ledger</span>
-          <button class="btn-sm" onclick="toggleDebtForm()">+ New Debt</button>
+          <span>Category Budgets</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);" id="budgetCount">0 Limits</span>
         </div>
+        <div class="entry-grid" id="budgetList"></div>
+      </section>
 
-        <div id="debtForm" style="display: none;" class="form-grid">
-          <input type="text" id="debtTitle" placeholder="Loan Name (e.g. Credit Card)" class="form-full" />
-          <div>
-            <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Original Principal:</label>
-            <input type="number" id="debtOriginal" placeholder="e.g. 50000" step="0.01" style="width:100%;" />
-          </div>
-          <div>
-            <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Current Balance:</label>
-            <input type="number" id="debtCurrent" placeholder="e.g. 35000" step="0.01" style="width:100%;" />
-          </div>
-          <div>
-            <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">APR Rate (%):</label>
-            <input type="number" id="debtApr" placeholder="e.g. 12" step="0.1" style="width:100%;" />
-          </div>
-          <div>
-            <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Monthly Payment:</label>
-            <input type="number" id="debtMonthly" placeholder="e.g. 2500" step="0.01" style="width:100%;" />
-          </div>
-          <button class="btn-submit" onclick="addDebt()">Save Loan Entry</button>
-          <button class="btn-secondary" onclick="toggleDebtForm()">Cancel</button>
+      <!-- Savings Goals Layer: saved goals + plus-icon add tile -->
+      <section class="card">
+        <div class="card-title">
+          <span>Savings Goals</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);" id="goalCount">0 Goals</span>
         </div>
+        <div class="entry-grid" id="goalList"></div>
+      </section>
 
-        <div class="debt-list" id="debtList"></div>
+      <!-- Loans Layer: saved loans + plus-icon add tile -->
+      <section class="card">
+        <div class="card-title">
+          <span>Loans</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);" id="debtCount">0 Loans</span>
+        </div>
+        <div class="entry-grid" id="debtList"></div>
       </section>
     </main>
 
@@ -1087,15 +1068,15 @@
     </div>
   </div>
 
-  <!-- MODAL 7: Edit Debt Modal -->
+  <!-- MODAL 7: Add / Edit Loan Modal (dual mode) -->
   <div class="modal-overlay" id="editDebtModal">
     <div class="modal-card">
       <div class="modal-header">
-        <span>Edit Debt Record</span>
+        <span id="debtModalTitle">Add Loan</span>
         <button class="btn-icon" onclick="closeEditDebtModal()">✕</button>
       </div>
       <div class="form-grid">
-        <input type="text" id="editDebtTitle" placeholder="Loan Name" class="form-full" />
+        <input type="text" id="editDebtTitle" placeholder="Loan Name (e.g. Credit Card)" class="form-full" />
         <div>
           <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Original Principal:</label>
           <input type="number" id="editDebtOriginal" step="0.01" style="width: 100%;" />
@@ -1112,7 +1093,7 @@
           <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Monthly Payment:</label>
           <input type="number" id="editDebtMonthly" step="0.01" style="width: 100%;" />
         </div>
-        <button class="btn-submit form-full" onclick="saveDebtEdit()">Save Changes</button>
+        <button class="btn-submit form-full" id="debtModalSaveBtn" onclick="saveDebtEdit()">Save Loan Entry</button>
         <button class="btn-secondary form-full" onclick="closeEditDebtModal()">Cancel</button>
       </div>
     </div>
@@ -1178,15 +1159,15 @@
     </div>
   </div>
 
-  <!-- MODAL 9: Edit Goal Modal -->
+  <!-- MODAL 9: Add / Edit Savings Goal Modal (dual mode) -->
   <div class="modal-overlay" id="editGoalModal">
     <div class="modal-card">
       <div class="modal-header">
-        <span>Edit Savings Goal</span>
+        <span id="goalModalTitle">Add Savings Goal</span>
         <button class="btn-icon" onclick="closeGoalModal()">✕</button>
       </div>
       <div class="form-grid">
-        <input type="text" id="editGoalTitle" placeholder="Goal Name" class="form-full" />
+        <input type="text" id="editGoalTitle" placeholder="Goal Name (e.g. New Laptop)" class="form-full" />
         <div>
           <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Target Amount:</label>
           <input type="number" id="editGoalTarget" style="width: 100%;" />
@@ -1199,8 +1180,45 @@
           <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Target Date:</label>
           <input type="date" id="editGoalTargetDate" style="width: 100%;" />
         </div>
-        <button class="btn-submit form-full" onclick="saveGoalEdit()">Save Changes</button>
+        <button class="btn-submit form-full" id="goalModalSaveBtn" onclick="saveGoalEdit()">Save Goal</button>
         <button class="btn-secondary form-full" onclick="closeGoalModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 10: Add / Edit Category Budget Modal (dual mode) -->
+  <div class="modal-overlay" id="budgetModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span id="budgetModalTitle">Set Budget</span>
+        <button class="btn-icon" onclick="closeBudgetModal()">✕</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-full">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Category:</label>
+          <select id="budgetCategory" style="width: 100%;">
+            <option value="Bills">Bills</option>
+            <option value="Education">Education</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Financial & Debt">Financial & Debt</option>
+            <option value="Food & Dining">Food & Dining</option>
+            <option value="Health & Personal Care">Health & Personal Care</option>
+            <option value="Housing & Utilities">Housing & Utilities</option>
+            <option value="Investment">Investment</option>
+            <option value="Others">Others</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Transportation">Transportation</option>
+            <option value="Travel">Travel</option>
+          </select>
+        </div>
+
+        <div class="form-full">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Monthly Limit:</label>
+          <input type="number" id="budgetAmount" placeholder="0.00" step="0.01" style="width: 100%;" />
+        </div>
+
+        <button class="btn-submit form-full" id="budgetModalSaveBtn" onclick="saveBudget()">Save Budget Limit</button>
+        <button class="btn-secondary form-full" onclick="closeBudgetModal()">Cancel</button>
       </div>
     </div>
   </div>
@@ -1476,7 +1494,15 @@
     function initApp() {
       applyTheme(currentTheme);
       document.getElementById('globalEyeBtn').innerText = isPrivacyMode ? '🙈' : '👁️';
+      syncSettingsInputs();
       renderApp();
+
+      /* Clicking the dimmed backdrop closes whichever modal is open. */
+      document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', e => {
+          if (e.target === overlay) overlay.classList.remove('active');
+        });
+      });
     }
 
     function switchView(viewName) {
@@ -1688,51 +1714,388 @@
       }
     }
 
-    /* Budgets & Goals */
-    function toggleBudgetForm() {
-      const form = document.getElementById('budgetForm');
-      form.style.display = form.style.display === 'none' ? 'grid' : 'none';
+    /* ==========================================================================
+       BUDGETS — add + EDIT via a single dual-mode modal.
+       editingBudgetKey holds the category being edited (null = adding new).
+       ========================================================================== */
+    let editingBudgetKey = null;
+
+    function openBudgetModal(existingCategory) {
+      const isEdit = !!existingCategory && Object.prototype.hasOwnProperty.call(budgets, existingCategory);
+      editingBudgetKey = isEdit ? existingCategory : null;
+
+      document.getElementById('budgetModalTitle').innerText = isEdit ? 'Edit Budget Limit' : 'Set Budget';
+      document.getElementById('budgetModalSaveBtn').innerText = isEdit ? 'Save Changes' : 'Save Budget Limit';
+      document.getElementById('budgetCategory').value = isEdit ? existingCategory : 'Bills';
+      document.getElementById('budgetAmount').value = isEdit ? budgets[existingCategory] : '';
+
+      document.getElementById('budgetModal').classList.add('active');
+    }
+
+    function closeBudgetModal() {
+      editingBudgetKey = null;
+      document.getElementById('budgetModal').classList.remove('active');
     }
 
     function saveBudget() {
       const cat = document.getElementById('budgetCategory').value;
       const amt = parseFloat(document.getElementById('budgetAmount').value);
-      if (isNaN(amt) || amt <= 0) return;
+
+      if (isNaN(amt) || amt <= 0) { alert('Please enter a valid monthly limit.'); return; }
+
+      /* Editing and the category was switched: drop the old key so the entry
+         moves instead of leaving a duplicate behind. */
+      if (editingBudgetKey && editingBudgetKey !== cat) delete budgets[editingBudgetKey];
+
       budgets[cat] = amt;
       autoSave();
       renderApp();
-      toggleBudgetForm();
+      closeBudgetModal();
     }
 
     function deleteBudget(cat) {
+      if (!confirm(`Remove the budget limit for ${cat}?`)) return;
       delete budgets[cat];
       autoSave();
       renderApp();
     }
 
-    function toggleGoalForm() {
-      const form = document.getElementById('goalForm');
-      form.style.display = form.style.display === 'none' ? 'grid' : 'none';
+    /* ==========================================================================
+       SAVINGS GOALS — add + EDIT via a single dual-mode modal.
+       ========================================================================== */
+    let editingGoalId = null;
+
+    function openGoalModal(goalId) {
+      const goal = goalId ? goals.find(g => g.id === goalId) : null;
+      editingGoalId = goal ? goal.id : null;
+
+      document.getElementById('goalModalTitle').innerText = goal ? 'Edit Savings Goal' : 'Add Savings Goal';
+      document.getElementById('goalModalSaveBtn').innerText = goal ? 'Save Changes' : 'Save Goal';
+      document.getElementById('editGoalTitle').value = goal ? goal.title : '';
+      document.getElementById('editGoalTarget').value = goal ? goal.target : '';
+      document.getElementById('editGoalSaved').value = goal ? (goal.saved || 0) : 0;
+      document.getElementById('editGoalTargetDate').value = goal ? (goal.targetDate || '') : '';
+
+      document.getElementById('editGoalModal').classList.add('active');
     }
 
-    function addGoal() {
-      const title = document.getElementById('goalTitle').value.trim();
-      const target = parseFloat(document.getElementById('goalTarget').value);
-      const date = document.getElementById('goalTargetDate').value;
-      if (!title || isNaN(target) || target <= 0) return;
+    function closeGoalModal() {
+      editingGoalId = null;
+      document.getElementById('editGoalModal').classList.remove('active');
+    }
 
-      goals.push({ id: Date.now(), title, target, saved: 0, targetDate: date || null });
+    function saveGoalEdit() {
+      const title = document.getElementById('editGoalTitle').value.trim();
+      const target = parseFloat(document.getElementById('editGoalTarget').value);
+      const saved = parseFloat(document.getElementById('editGoalSaved').value);
+      const date = document.getElementById('editGoalTargetDate').value;
+
+      if (!title) { alert('Please enter a goal name.'); return; }
+      if (isNaN(target) || target <= 0) { alert('Please enter a valid target amount.'); return; }
+
+      const savedVal = isNaN(saved) || saved < 0 ? 0 : saved;
+
+      if (editingGoalId) {
+        const goal = goals.find(g => g.id === editingGoalId);
+        if (goal) {
+          goal.title = title;
+          goal.target = target;
+          goal.saved = savedVal;
+          goal.targetDate = date || null;
+        }
+      } else {
+        goals.push({ id: Date.now(), title, target, saved: savedVal, targetDate: date || null });
+      }
+
       autoSave();
       renderApp();
-      toggleGoalForm();
+      closeGoalModal();
     }
 
     function deleteGoal(id) {
+      if (!confirm('Remove this savings goal?')) return;
       goals = goals.filter(g => g.id !== id);
       autoSave();
       renderApp();
     }
 
+    /* Goal deposits */
+    let depositingGoalId = null;
+
+    function openDepositModal(goalId) {
+      const goal = goals.find(g => g.id === goalId);
+      if (!goal) return;
+      depositingGoalId = goal.id;
+
+      document.getElementById('depositModalTitle').innerText = `Deposit — ${goal.title}`;
+      document.getElementById('depositGoalInfo').innerText = `${maskAmount(goal.saved || 0)} / ${maskAmount(goal.target)}`;
+      document.getElementById('depositAmountInput').value = '';
+      document.getElementById('depositModal').classList.add('active');
+    }
+
+    function closeDepositModal() {
+      depositingGoalId = null;
+      document.getElementById('depositModal').classList.remove('active');
+    }
+
+    function confirmDeposit() {
+      const amount = parseFloat(document.getElementById('depositAmountInput').value);
+      if (isNaN(amount) || amount <= 0) { alert('Please enter a valid deposit amount.'); return; }
+
+      const goal = goals.find(g => g.id === depositingGoalId);
+      if (goal) goal.saved = (goal.saved || 0) + amount;
+
+      autoSave();
+      renderApp();
+      closeDepositModal();
+    }
+
+    /* ==========================================================================
+       LOANS — add + EDIT via a single dual-mode modal.
+       ========================================================================== */
+    let editingDebtId = null;
+
+    function openEditDebtModal(debtId) {
+      const debt = debtId ? debts.find(d => d.id === debtId) : null;
+      editingDebtId = debt ? debt.id : null;
+
+      document.getElementById('debtModalTitle').innerText = debt ? 'Edit Loan' : 'Add Loan';
+      document.getElementById('debtModalSaveBtn').innerText = debt ? 'Save Changes' : 'Save Loan Entry';
+      document.getElementById('editDebtTitle').value = debt ? debt.title : '';
+      document.getElementById('editDebtOriginal').value = debt ? debt.original : '';
+      document.getElementById('editDebtCurrent').value = debt ? debt.current : '';
+      document.getElementById('editDebtApr').value = debt ? (debt.apr || '') : '';
+      document.getElementById('editDebtMonthly').value = debt ? (debt.monthly || '') : '';
+
+      document.getElementById('editDebtModal').classList.add('active');
+    }
+
+    function closeEditDebtModal() {
+      editingDebtId = null;
+      document.getElementById('editDebtModal').classList.remove('active');
+    }
+
+    function saveDebtEdit() {
+      const title = document.getElementById('editDebtTitle').value.trim();
+      const original = parseFloat(document.getElementById('editDebtOriginal').value);
+      const current = parseFloat(document.getElementById('editDebtCurrent').value);
+      const apr = parseFloat(document.getElementById('editDebtApr').value);
+      const monthly = parseFloat(document.getElementById('editDebtMonthly').value);
+
+      if (!title) { alert('Please enter a loan name.'); return; }
+      if (isNaN(original) || original <= 0) { alert('Please enter a valid original principal.'); return; }
+      if (isNaN(current) || current < 0) { alert('Please enter a valid current balance.'); return; }
+
+      const payload = {
+        title,
+        original,
+        current,
+        apr: isNaN(apr) ? 0 : apr,
+        monthly: isNaN(monthly) ? 0 : monthly
+      };
+
+      if (editingDebtId) {
+        const debt = debts.find(d => d.id === editingDebtId);
+        if (debt) Object.assign(debt, payload);
+      } else {
+        debts.push(Object.assign({ id: Date.now() }, payload));
+      }
+
+      autoSave();
+      renderApp();
+      closeEditDebtModal();
+    }
+
+    function deleteDebt(id) {
+      if (!confirm('Remove this loan record?')) return;
+      debts = debts.filter(d => d.id !== id);
+      autoSave();
+      renderApp();
+    }
+
+    /* Loan payments */
+    let payingDebtId = null;
+
+    function openPayDebtModal(debtId) {
+      const debt = debts.find(d => d.id === debtId);
+      if (!debt) return;
+      payingDebtId = debt.id;
+
+      document.getElementById('payDebtModalTitle').innerText = `Payment — ${debt.title}`;
+      document.getElementById('payDebtInfo').innerText = maskAmount(debt.current);
+      document.getElementById('payDebtAmountInput').value = '';
+      document.getElementById('payDebtModal').classList.add('active');
+    }
+
+    function closePayDebtModal() {
+      payingDebtId = null;
+      document.getElementById('payDebtModal').classList.remove('active');
+    }
+
+    function confirmDebtPayment() {
+      const amount = parseFloat(document.getElementById('payDebtAmountInput').value);
+      if (isNaN(amount) || amount <= 0) { alert('Please enter a valid payment amount.'); return; }
+
+      const debt = debts.find(d => d.id === payingDebtId);
+      if (debt) debt.current = Math.max(0, debt.current - amount);
+
+      autoSave();
+      renderApp();
+      closePayDebtModal();
+    }
+
+    /* ==========================================================================
+       TRANSACTION EDITING (the Edit Transaction modal existed in the markup but
+       had no handlers wired to it at all)
+       ========================================================================== */
+    let editingTxId = null;
+
+    function openTxModal(txId) {
+      const tx = transactions.find(t => t.id === txId);
+      if (!tx) return;
+      editingTxId = tx.id;
+
+      document.getElementById('editTxDesc').value = tx.desc;
+      document.getElementById('editTxAmount').value = tx.amount;
+      document.getElementById('editTxType').value = tx.type;
+      document.getElementById('editTxCategory').value = tx.category;
+      document.getElementById('editTxDate').value = tx.isoDate || '';
+      document.getElementById('editTxRecurring').checked = !!tx.isRecurring;
+
+      handleTypeChange('edit');
+
+      /* Set the account dropdowns after the type change so the transfer
+         destination field is visible before we assign its value. */
+      const fromSel = document.getElementById('editTxAccount');
+      const toSel = document.getElementById('editTxToAccount');
+      if (userAccounts.some(a => a.name === tx.account)) fromSel.value = tx.account;
+      if (tx.toAccount && userAccounts.some(a => a.name === tx.toAccount)) toSel.value = tx.toAccount;
+
+      document.getElementById('editTxModal').classList.add('active');
+    }
+
+    function closeTxModal() {
+      editingTxId = null;
+      document.getElementById('editTxModal').classList.remove('active');
+    }
+
+    function saveTxEdit() {
+      const tx = transactions.find(t => t.id === editingTxId);
+      if (!tx) return;
+
+      const desc = document.getElementById('editTxDesc').value.trim();
+      const amount = parseFloat(document.getElementById('editTxAmount').value);
+      const type = document.getElementById('editTxType').value;
+      const account = document.getElementById('editTxAccount').value;
+      const toAccount = document.getElementById('editTxToAccount').value;
+      const category = document.getElementById('editTxCategory').value;
+      const rawDate = document.getElementById('editTxDate').value || tx.isoDate;
+      const isRecurring = document.getElementById('editTxRecurring').checked;
+
+      if (!desc || isNaN(amount) || amount <= 0) { alert('Please enter a valid title and amount.'); return; }
+      if (type === 'transfer' && account === toAccount) { alert('Origin and destination accounts must be different.'); return; }
+
+      tx.desc = desc;
+      tx.amount = amount;
+      tx.type = type;
+      tx.account = account;
+      tx.toAccount = type === 'transfer' ? toAccount : null;
+      tx.category = type === 'transfer' ? 'Financial & Debt' : category;
+      tx.isoDate = rawDate;
+      tx.date = formatDate(rawDate);
+      tx.isRecurring = isRecurring;
+
+      autoSave();
+      renderApp();
+      closeTxModal();
+    }
+
+    /* ==========================================================================
+       SETTINGS: CURRENCY + BACKUP / RESTORE / CSV EXPORT
+       (all four of these were referenced by the Settings modal but never
+       defined, so every button in there threw a ReferenceError)
+       ========================================================================== */
+    function changeCurrency(symbol) {
+      currentCurrency = symbol || '₱';
+      autoSave();
+      renderApp();
+    }
+
+    function downloadBlob(content, filename, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportDataJSON() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        version: 1,
+        transactions,
+        userAccounts,
+        goals,
+        debts,
+        budgets,
+        currency: currentCurrency,
+        theme: currentTheme
+      };
+      downloadBlob(JSON.stringify(payload, null, 2), `moneytor-backup-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+    }
+
+    function importDataJSON(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!confirm('Restoring will replace all current data. Continue?')) return;
+
+          if (Array.isArray(data.transactions)) transactions = data.transactions;
+          if (Array.isArray(data.userAccounts) && data.userAccounts.length) userAccounts = data.userAccounts;
+          if (Array.isArray(data.goals)) goals = data.goals;
+          if (Array.isArray(data.debts)) debts = data.debts;
+          if (data.budgets && typeof data.budgets === 'object') budgets = data.budgets;
+          if (data.currency) currentCurrency = data.currency;
+          if (data.theme) applyTheme(data.theme);
+
+          autoSave();
+          syncSettingsInputs();
+          renderApp();
+          alert('Backup restored successfully.');
+        } catch (err) {
+          alert('That file could not be read as a Moneytor backup.');
+        } finally {
+          event.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportCSV() {
+      if (transactions.length === 0) { alert('There are no transactions to export.'); return; }
+
+      const esc = v => `"${String(v === null || v === undefined ? '' : v).replace(/"/g, '""')}"`;
+      const header = ['Date', 'Title', 'Type', 'Category', 'Account', 'To Account', 'Amount', 'Recurring'];
+      const rows = transactions.map(t => [
+        t.isoDate || t.date || '', t.desc, t.type, t.category,
+        t.account || '', t.toAccount || '', t.amount, t.isRecurring ? 'Yes' : 'No'
+      ].map(esc).join(','));
+
+      downloadBlob([header.map(esc).join(','), ...rows].join('\n'), `moneytor-transactions-${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv');
+    }
+
+    function syncSettingsInputs() {
+      const sel = document.getElementById('currencySelector');
+      if (sel) sel.value = currentCurrency;
+    }
     function setChartTimeframe(tf) {
       chartTimeframe = tf;
       document.querySelectorAll('.segmented-control .toggle-btn').forEach(b => b.classList.remove('active'));
@@ -1835,71 +2198,152 @@
       filterWalletSel.innerHTML = `<option value="all">All Accounts</option>` + userAccounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
       if (userAccounts.some(a => a.name === curFilterWallet) || curFilterWallet === 'all') filterWalletSel.value = curFilterWallet;
 
-      // 3. Render Active User Accounts Grid
+      /* Auto-shrink helper: the tiles in a layer get progressively more
+         compact (and accounts gain a third column) as entries pile up, so
+         the saved entries and the "add new" tile always fit the layer. */
+      function applyGridDensity(container, count, allowThirdColumn) {
+        container.classList.toggle('is-empty', count === 0);
+        container.classList.toggle('dense', count >= 3);
+        container.classList.toggle('denser', !!allowThirdColumn && count >= 6);
+      }
+
+      // 3. Render Active Accounts Layer (entry tiles + add tile, side by side)
       const walletsContainer = document.getElementById('walletsList');
       document.getElementById('activeAccountCount').innerText = `${userAccounts.length} Accounts`;
+
       walletsContainer.innerHTML = userAccounts.map(acc => `
-        <div class="wallet-card-item">
-          <div class="wallet-card-top">
-            <div class="wallet-brand-meta">
+        <div class="entry-tile">
+          <div class="entry-tile-head">
+            <div class="wallet-brand-meta" style="min-width:0;">
               <img src="${getAccountIconDataUri(acc.name, acc.category)}" class="wallet-icon-img" alt="" />
-              <span class="wallet-card-title">${acc.name}</span>
+              <span class="entry-tile-title">${acc.name}</span>
             </div>
-            ${userAccounts.length > 1 ? `<button class="btn-icon" style="font-size:0.68rem;" onclick="deleteUserAccount(${acc.id})">✕</button>` : ''}
+            ${userAccounts.length > 1 ? `<button class="btn-icon-sm danger" title="Delete account" onclick="deleteUserAccount(${acc.id})">✕</button>` : ''}
           </div>
           <span class="wallet-cat-tag">${acc.category}</span>
-          <span class="wallet-card-val">${maskAmount(accountBalances[acc.name] || 0)}</span>
+          <span class="entry-tile-value">${maskAmount(accountBalances[acc.name] || 0)}</span>
         </div>
       `).join('');
 
-      // 4. Render Budgets List
+      walletsContainer.insertAdjacentHTML('beforeend', `
+        <div class="add-tile" onclick="openCategorizedAccountsModal()" title="Add Account">
+          <span class="add-tile-icon">+</span>
+          <span class="add-tile-label">Add Account</span>
+        </div>
+      `);
+      applyGridDensity(walletsContainer, userAccounts.length, true);
+
+      // 4. Render Budgets Layer (spend is measured against the CURRENT month,
+      //    which is what a "Monthly Limit" actually means — it used to total
+      //    every matching transaction ever recorded)
       const budgetContainer = document.getElementById('budgetList');
       const budgetKeys = Object.keys(budgets);
-      budgetContainer.innerHTML = budgetKeys.length === 0 ? `<div class="empty-text">No category budget limits configured.</div>` : '';
-      budgetKeys.forEach(cat => {
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+      budgetContainer.innerHTML = budgetKeys.map(cat => {
         const limit = budgets[cat];
         let spent = 0;
-        transactions.filter(t => t.category === cat && t.type === 'expense').forEach(t => spent += t.amount);
-        const percent = Math.min(100, Math.round((spent / limit) * 100));
-        budgetContainer.insertAdjacentHTML('beforeend', `
-          <div class="budget-item">
-            <div class="budget-header">
-              <span>${cat}</span>
-              <span>${maskAmount(spent)} / ${maskAmount(limit)}</span>
+        transactions.forEach(t => {
+          if (t.category !== cat || t.type !== 'expense') return;
+          const d = new Date(t.isoDate || t.date);
+          if (isNaN(d.getTime()) || d < monthStart) return;
+          spent += t.amount;
+        });
+        const percent = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0;
+        const over = spent > limit;
+        return `
+          <div class="entry-tile">
+            <div class="entry-tile-head">
+              <span class="entry-tile-title">${cat}</span>
+              <div class="btn-group-sm">
+                <button class="btn-icon-sm" title="Edit budget" onclick="openBudgetModal('${escAttr(cat)}')">✎</button>
+                <button class="btn-icon-sm danger" title="Remove budget" onclick="deleteBudget('${escAttr(cat)}')">✕</button>
+              </div>
             </div>
+            <span class="entry-tile-sub">${maskAmount(spent)} / ${maskAmount(limit)}</span>
             <div class="hero-progress-bg">
-              <div class="hero-progress-fill" style="width: ${percent}%;"></div>
+              <div class="hero-progress-fill" style="width: ${percent}%; ${over ? 'background: var(--expense-color);' : ''}"></div>
             </div>
-            <div class="goal-actions" style="display:flex; justify-style:space-between; align-items:center;">
-              <span style="font-size:0.7rem; color:var(--text-muted);">${percent}% Used</span>
-              <button class="btn-sm btn-danger" onclick="deleteBudget('${cat}')">Remove</button>
-            </div>
+            <span class="entry-tile-meta" ${over ? 'style="color: var(--expense-color);"' : ''}>${percent}% Used${over ? ' • Over limit' : ''}</span>
           </div>
-        `);
-      });
+        `;
+      }).join('');
 
-      // 5. Render Goals List
+      budgetContainer.insertAdjacentHTML('beforeend', `
+        <div class="add-tile" onclick="openBudgetModal()" title="Set Budget">
+          <span class="add-tile-icon">+</span>
+          <span class="add-tile-label">Set Budget</span>
+        </div>
+      `);
+      document.getElementById('budgetCount').innerText = `${budgetKeys.length} ${budgetKeys.length === 1 ? 'Limit' : 'Limits'}`;
+      applyGridDensity(budgetContainer, budgetKeys.length, false);
+
+      // 5. Render Savings Goals Layer (add tile is a plain plus icon)
       const goalListContainer = document.getElementById('goalList');
-      goalListContainer.innerHTML = goals.length === 0 ? `<div class="empty-text">No active savings goals.</div>` : '';
-      goals.forEach(goal => {
-        const percent = Math.min(100, Math.round((goal.saved / goal.target) * 100));
-        goalListContainer.insertAdjacentHTML('beforeend', `
-          <div class="goal-item">
-            <div class="goal-header">
-              <span>${goal.title}</span>
-              <span>${maskAmount(goal.saved)} / ${maskAmount(goal.target)}</span>
+      goalListContainer.innerHTML = goals.map(goal => {
+        const percent = goal.target > 0 ? Math.min(100, Math.round(((goal.saved || 0) / goal.target) * 100)) : 0;
+        return `
+          <div class="entry-tile">
+            <div class="entry-tile-head">
+              <span class="entry-tile-title">${goal.title}</span>
+              <div class="btn-group-sm">
+                <button class="btn-icon-sm" title="Edit goal" onclick="openGoalModal(${goal.id})">✎</button>
+                <button class="btn-icon-sm danger" title="Remove goal" onclick="deleteGoal(${goal.id})">✕</button>
+              </div>
             </div>
+            <span class="entry-tile-sub">${maskAmount(goal.saved || 0)} / ${maskAmount(goal.target)}</span>
             <div class="hero-progress-bg">
               <div class="hero-progress-fill" style="width: ${percent}%;"></div>
             </div>
-            <div class="goal-actions" style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:0.7rem; color:var(--text-muted);">${percent}% Achieved</span>
-              <button class="btn-sm btn-danger" onclick="deleteGoal(${goal.id})">Remove</button>
-            </div>
+            <span class="entry-tile-meta">${percent}% Achieved${goal.targetDate ? ` • by ${formatDate(goal.targetDate)}` : ''}</span>
+            <button class="entry-tile-action" onclick="openDepositModal(${goal.id})">+ Deposit</button>
           </div>
-        `);
-      });
+        `;
+      }).join('');
 
+      goalListContainer.insertAdjacentHTML('beforeend', `
+        <div class="add-tile" onclick="openGoalModal()" title="New Goal" aria-label="New Goal">
+          <span class="add-tile-icon">+</span>
+        </div>
+      `);
+      document.getElementById('goalCount').innerText = `${goals.length} ${goals.length === 1 ? 'Goal' : 'Goals'}`;
+      applyGridDensity(goalListContainer, goals.length, false);
+
+      // 5b. Render Loans Layer (add tile is a plain plus icon)
+      const debtListContainer = document.getElementById('debtList');
+      debtListContainer.innerHTML = debts.map(debt => {
+        const paidOff = debt.original > 0
+          ? Math.min(100, Math.max(0, Math.round(((debt.original - debt.current) / debt.original) * 100)))
+          : 0;
+        const metaBits = [`${paidOff}% Paid Off`];
+        if (debt.apr) metaBits.push(`${debt.apr}% APR`);
+        if (debt.monthly) metaBits.push(`${maskAmount(debt.monthly)}/mo`);
+        return `
+          <div class="entry-tile">
+            <div class="entry-tile-head">
+              <span class="entry-tile-title">${debt.title}</span>
+              <div class="btn-group-sm">
+                <button class="btn-icon-sm" title="Edit loan" onclick="openEditDebtModal(${debt.id})">✎</button>
+                <button class="btn-icon-sm danger" title="Remove loan" onclick="deleteDebt(${debt.id})">✕</button>
+              </div>
+            </div>
+            <span class="entry-tile-sub">${maskAmount(debt.current)} / ${maskAmount(debt.original)}</span>
+            <div class="hero-progress-bg">
+              <div class="hero-progress-fill" style="width: ${paidOff}%;"></div>
+            </div>
+            <span class="entry-tile-meta">${metaBits.join(' • ')}</span>
+            <button class="entry-tile-action" onclick="openPayDebtModal(${debt.id})">Log Payment</button>
+          </div>
+        `;
+      }).join('');
+
+      debtListContainer.insertAdjacentHTML('beforeend', `
+        <div class="add-tile" onclick="openEditDebtModal()" title="Add Loan" aria-label="Add Loan">
+          <span class="add-tile-icon">+</span>
+        </div>
+      `);
+      document.getElementById('debtCount').innerText = `${debts.length} ${debts.length === 1 ? 'Loan' : 'Loans'}`;
+      applyGridDensity(debtListContainer, debts.length, false);
       // 6. Render Transactions History
       const searchQuery = document.getElementById('searchInput').value.toLowerCase();
       const filterType = document.getElementById('filterType').value;
@@ -1929,7 +2373,8 @@
             </div>
             <div style="display:flex; align-items:center;">
               <span class="tx-amount ${tx.type}">${typeSymbol}${maskAmount(tx.amount)}</span>
-              <button class="btn-icon" style="margin-left:8px;" onclick="deleteTransaction(${tx.id})">✕</button>
+              <button class="btn-icon" style="margin-left:8px;" title="Edit transaction" onclick="openTxModal(${tx.id})">✎</button>
+              <button class="btn-icon" title="Delete transaction" onclick="deleteTransaction(${tx.id})">✕</button>
             </div>
           </div>
         `);
@@ -1952,11 +2397,35 @@
       if (chartTimeframe === 'monthly') labels = ['Monthly Income', 'Monthly Expense'];
       if (chartTimeframe === 'yearly') labels = ['Yearly Income', 'Yearly Expense'];
 
+      /* The Daily/Weekly/Monthly/Yearly buttons used to only swap the two
+         labels — every timeframe charted the same all-time totals. Now the
+         transactions are actually filtered to the selected period. */
+      const now = new Date();
+      let periodStart;
+      if (chartTimeframe === 'daily') {
+        periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      } else if (chartTimeframe === 'weekly') {
+        periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+      } else if (chartTimeframe === 'yearly') {
+        periodStart = new Date(now.getFullYear(), 0, 1);
+      } else {
+        periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+
+      let periodInc = 0;
+      let periodExp = 0;
+      transactions.forEach(tx => {
+        const d = new Date(tx.isoDate || tx.date);
+        if (isNaN(d.getTime()) || d < periodStart) return;
+        if (tx.type === 'income') periodInc += tx.amount;
+        else if (tx.type === 'expense' || tx.type === 'investment') periodExp += tx.amount;
+      });
+
       myChart = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: labels,
-          datasets: [{ data: [totalInc, totalExp], backgroundColor: ['#34D399', '#F87171'], borderRadius: 6 }]
+          datasets: [{ data: [periodInc, periodExp], backgroundColor: ['#34D399', '#F87171'], borderRadius: 6 }]
         },
         options: {
           responsive: true,
