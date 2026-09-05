@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>Moneytor - Save more, Spend less.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    /* ==========================================================================
+       1. GLOBAL THEME VARIABLES (UI MODIFICATION POINT)
+       Modify color variables here to update the global app palette.
+       ========================================================================== */
+    :root {
+      --bg-main: #090D16;
+      --bg-card: #131A29;
+      --bg-card-hover: #1A2438;
+      --bg-input: #0A0E18;
+      --border-color: #1F2C42;
+      
+      --accent-primary: #10B981;
+      --accent-primary-hover: #059669;
+      --accent-gradient: linear-gradient(135deg, #059669 0%, #10B981 100%);
+      
+      --text-main: #F3F4F6;
+      --text-muted: #9CA3AF;
+      --income-color: #34D399;
+      --expense-color: #F87171;
+      --investment-color: #A78BFA;
+      --transfer-color: #60A5FA;
+      --debt-color: #F59E0B;
+      --recurring-badge: #8B5CF6;
+      --nav-bg: rgba(19, 26, 41, 0.88);
+      --modal-overlay: rgba(0, 0, 0, 0.78);
+    }
+
+    body.light-theme {
+      --bg-main: #F1F5F9;
+      --bg-card: #FFFFFF;
+      --bg-card-hover: #F8FAFC;
+      --bg-input: #F1F5F9;
+      --border-color: #E2E8F0;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --investment-color: #7C3AED;
+      --nav-bg: rgba(255, 255, 255, 0.88);
+      --modal-overlay: rgba(15, 23, 42, 0.5);
+    }
+
+    /* In light mode, make the "+ New Goal" / "+ New Debt" action buttons match
+       the accent color already used by "+ Set Budget" and the home "+ Add
+       Account" badge, so all primary "add" actions look consistent. */
+    body.light-theme .btn-sm:not(.btn-danger) {
+      background: var(--accent-gradient);
+      color: #000;
+      border-color: transparent;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      padding-bottom: 90px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Views Layout Engine */
+    .app-view {
+      display: none;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .app-view.active {
+      display: flex;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 6px;
+    }
+
+    .brand-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #10B981, #60A5FA);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .author-tag {
+      font-size: 0.62rem;
+      color: var(--accent-primary);
+      font-weight: 600;
+      margin-top: 1px;
+    }
+
+    .btn-hamburger {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    select, input[type="text"], input[type="number"], input[type="date"] {
+      background: var(--bg-input);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    /* Compact Net Worth Card (slimmed down: no savings-rate/progress row) */
+    .hero-card {
+      background: var(--accent-gradient);
+      color: #FFFFFF;
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: 0 6px 16px -5px rgba(16, 185, 129, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .hero-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .hero-card .label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      opacity: 0.88;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* Snug, Auto-Fitting Balance Display */
+    .hero-card .balance-amount {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+      margin-top: 1px;
+      width: fit-content;
+    }
+
+    .btn-eye-toggle {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #FFFFFF;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.82rem;
+      backdrop-filter: blur(4px);
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding-top: 6px;
+    }
+
+    .stat-item { display: flex; flex-direction: column; }
+    .stat-item .stat-label { font-size: 0.6rem; opacity: 0.85; }
+    .stat-item .stat-val { font-size: 0.78rem; font-weight: 700; }
+
+    .hero-progress-bg {
+      background: rgba(255, 255, 255, 0.2);
+      height: 6px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .hero-progress-fill {
+      background: #FFFFFF;
+      height: 100%;
+      width: 0%;
+      transition: width 0.4s ease;
+      border-radius: 4px;
+    }
+
+    /* Standalone Add Account Button Block */
+    .add-account-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .add-account-block:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-primary);
+    }
+
+    .add-account-icon-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--accent-gradient);
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .add-account-text {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* Section Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .center-header-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      gap: 8px;
+      text-align: center;
+    }
+
+    /* Wallets Grid */
+    .wallets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .wallet-card-item {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .wallet-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .wallet-brand-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .wallet-icon-img {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .wallet-card-title { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wallet-card-val { font-size: 0.92rem; font-weight: 700; color: var(--text-main); }
+    .wallet-cat-tag { font-size: 0.58rem; color: var(--accent-primary); font-weight: 700; text-transform: uppercase; }
+
+    /* Segmented Control */
+    .segmented-control {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 2px;
+      display: flex;
+      gap: 2px;
+      width: fit-content;
+      margin: 0 auto;
+    }
+
+    .toggle-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .toggle-btn.active { background: var(--border-color); color: var(--text-main); }
+
+    /* Forms */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-full { grid-column: span 2; }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .btn-submit {
+      background: var(--accent-primary);
+      color: #000;
+      border: none;
+      padding: 11px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 11px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    /* Lists */
+    .goal-list, .debt-list, .budget-list { display: flex; flex-direction: column; gap: 10px; }
+    .goal-item, .debt-item, .budget-item {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .goal-header, .debt-header, .budget-header { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.88rem; }
+    .debt-meta-badge { color: var(--debt-color); font-size: 0.7rem; display: flex; gap: 8px; flex-wrap: wrap; font-weight: 600; }
+
+    /* History Filters */
+    .filter-box { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .filter-box input { grid-column: span 2; }
+    .tx-list { display: flex; flex-direction: column; gap: 8px; }
+    
+    .tx-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      border-radius: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tx-info { display: flex; flex-direction: column; gap: 2px; }
+    .tx-title { font-size: 0.88rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .tx-meta { font-size: 0.68rem; color: var(--text-muted); }
+    .tx-amount { font-weight: 700; font-size: 0.9rem; }
+    .tx-amount.income { color: var(--income-color); }
+    .tx-amount.expense { color: var(--expense-color); }
+    .tx-amount.investment { color: var(--investment-color); }
+    .tx-amount.transfer { color: var(--transfer-color); }
+
+    .btn-icon { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.88rem; padding: 4px; }
+
+    .chart-container { position: relative; max-height: 200px; display: flex; justify-content: center; }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--modal-overlay);
+      backdrop-filter: blur(6px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 20px;
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 88vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-header { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 1rem; }
+
+    /* Category Nav Chips inside Account Modal */
+    /* Category chip bar: horizontally navigable (drag/swipe/wheel + arrow buttons) */
+    .category-chip-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cat-nav-arrow {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      line-height: 1;
+    }
+
+    .cat-nav-arrow:active { background: var(--bg-card-hover); }
+
+    .category-chip-bar {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scrollbar-width: none;
+      scroll-behavior: smooth;
+      scroll-snap-type: x proximity;
+    }
+
+    .category-chip-bar::-webkit-scrollbar { display: none; }
+
+    .cat-chip {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      scroll-snap-align: start;
+    }
+
+    .cat-chip.active {
+      background: var(--accent-primary);
+      color: #000;
+      border-color: var(--accent-primary);
+    }
+
+    /* Template Item List */
+    .template-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 320px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .template-item {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .template-item:hover {
+      border-color: var(--accent-primary);
+    }
+
+    .template-item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .template-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Bottom Navigation Dock */
+    .bottom-nav-dock {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: 68px;
+      background: var(--nav-bg);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-color);
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      align-items: center;
+      padding: 0 12px;
+      z-index: 900;
+    }
+
+    .nav-item-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+      height: 100%;
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    .nav-item-btn.active { color: var(--accent-primary); }
+    .nav-item-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+    .nav-add-btn-wrapper { display: flex; justify-content: center; align-items: center; }
+
+    .nav-add-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--accent-gradient);
+      color: #000;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    }
+
+    .nav-add-btn svg { width: 24px; height: 24px; fill: #000000; }
+
+    .theme-toggle-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 9px 16px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: fit-content;
+      margin: 0 auto;
+    }
+
+    .empty-text { text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 8px 0; }
+    .btn-sm { background: var(--bg-card-hover); border: 1px solid var(--border-color); color: var(--text-main); padding: 4px 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.72rem; }
+    .btn-sm.btn-danger { color: var(--expense-color); }
+    .btn-group-sm { display: flex; gap: 4px; }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- ==========================================================================
+       VIEW 1: HOME PAGE
+       Contains: Total Net Worth (Compact + Privacy Eye Toggle), Add Account Block,
+                 Active Accounts Grid, Transactions History
+       ========================================================================== -->
+    <main id="viewHome" class="app-view active">
+      <header class="header">
+        <div>
+          <h1 class="brand-title">Moneytor</h1>
+          <p class="brand-subtitle">Save more, Spend less.</p>
+          <p class="author-tag">By Dante Vargas</p>
+        </div>
+        <button class="btn-hamburger" onclick="openMenuModal()" title="Settings & Backup">☰</button>
+      </header>
+
+      <!-- Compact Total Net Worth Card with Global Privacy Eye Toggle -->
+      <section class="hero-card">
+        <div class="hero-header-row">
+          <div>
+            <span class="label">Total Net Worth</span>
+            <div class="balance-amount" id="totalBalance">₱0.00</div>
+          </div>
+          <!-- Global Privacy Eye Toggle Button -->
+          <button class="btn-eye-toggle" id="globalEyeBtn" onclick="togglePrivacyMode()" title="Toggle Amount Visibility">
+            👁️
+          </button>
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-label">Income</span>
+            <span class="stat-val" id="totalIncome">₱0.00</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Expenses</span>
+            <span class="stat-val" id="totalExpense">₱0.00</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Standalone Add Account Button Block (On its own row) -->
+      <section class="add-account-block" onclick="openCategorizedAccountsModal()">
+        <div class="add-account-icon-badge">+</div>
+        <span class="add-account-text">Add Account</span>
+      </section>
+
+      <!-- User Active Created Accounts Grid -->
+      <section class="card">
+        <div class="card-title">
+          <span>Active Accounts</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);" id="activeAccountCount">0 Accounts</span>
+        </div>
+        <div class="wallets-grid" id="walletsList"></div>
+      </section>
+
+      <!-- Transactions History Section -->
+      <section class="card">
+        <div class="card-title">
+          <span>Transactions History</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);" id="txCount">0 items</span>
+        </div>
+
+        <div class="filter-box">
+          <input type="text" id="searchInput" placeholder="Search title or category..." onkeyup="renderApp()" />
+          <select id="filterType" onchange="renderApp()">
+            <option value="all">All Types</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+            <option value="investment">Investment</option>
+            <option value="transfer">Transfer</option>
+            <option value="recurring">Recurring</option>
+          </select>
+          <select id="filterWallet" onchange="renderApp()">
+            <option value="all">All Accounts</option>
+          </select>
+        </div>
+
+        <div class="tx-list" id="txList"></div>
+      </section>
+    </main>
+
+    <!-- ==========================================================================
+       VIEW 2: INSIGHTS PAGE
+       Contains: Refined Controls, Centered Budget & Goals, Refined Chart Filters
+       ========================================================================== -->
+    <main id="viewAnalytics" class="app-view">
+      <header class="header">
+        <div>
+          <h1 class="brand-title">Financial Insights</h1>
+          <p class="brand-subtitle">Analytics, Limits & Goals</p>
+        </div>
+      </header>
+
+      <!-- Refined Analytics Filters (Daily, Weekly, Monthly, Yearly) -->
+      <section class="card">
+        <div class="segmented-control">
+          <button class="toggle-btn active" id="btnTimeDaily" onclick="setChartTimeframe('daily')">Daily</button>
+          <button class="toggle-btn" id="btnTimeWeekly" onclick="setChartTimeframe('weekly')">Weekly</button>
+          <button class="toggle-btn" id="btnTimeMonthly" onclick="setChartTimeframe('monthly')">Monthly</button>
+          <button class="toggle-btn" id="btnTimeYearly" onclick="setChartTimeframe('yearly')">Yearly</button>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="spendingChart"></canvas>
+        </div>
+      </section>
+
+      <!-- Category Budget Limits Section (+ Set Budget centered) -->
+      <section class="card">
+        <div class="center-header-block">
+          <button class="btn-submit" onclick="toggleBudgetForm()">+ Set Budget</button>
+        </div>
+
+        <div id="budgetForm" style="display: none;" class="form-grid">
+          <select id="budgetCategory" class="form-full">
+            <option value="Bills">Bills</option>
+            <option value="Education">Education</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Financial & Debt">Financial & Debt</option>
+            <option value="Food & Dining">Food & Dining</option>
+            <option value="Health & Personal Care">Health & Personal Care</option>
+            <option value="Housing & Utilities">Housing & Utilities</option>
+            <option value="Investment">Investment</option>
+            <option value="Others">Others</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Transportation">Transportation</option>
+            <option value="Travel">Travel</option>
+          </select>
+          <input type="number" id="budgetAmount" placeholder="Monthly Limit (₱)" step="0.01" class="form-full" />
+          <button class="btn-submit" onclick="saveBudget()">Save Budget Limit</button>
+          <button class="btn-secondary" onclick="toggleBudgetForm()">Cancel</button>
+        </div>
+
+        <div class="budget-list" id="budgetList"></div>
+      </section>
+
+      <!-- Savings Goals Section (Savings Goals title centered, + New Goal underneath) -->
+      <section class="card">
+        <div class="center-header-block">
+          <span style="font-size: 1rem; font-weight: 800;">Savings Goals</span>
+          <button class="btn-sm" style="padding: 8px 16px; font-size: 0.8rem;" onclick="toggleGoalForm()">+ New Goal</button>
+        </div>
+
+        <div id="goalForm" style="display: none;" class="form-grid">
+          <input type="text" id="goalTitle" placeholder="Goal Name (e.g. New Laptop)" class="form-full" />
+          <input type="number" id="goalTarget" placeholder="Target Amount" />
+          <div>
+            <label style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Target Date:</label>
+            <input type="date" id="goalTargetDate" style="width: 100%;" />
+          </div>
+          <button class="btn-submit" onclick="addGoal()">Save Goal</button>
+          <button class="btn-secondary" onclick="toggleGoalForm()">Cancel</button>
+        </div>
+
+        <div class="goal-list" id="goalList"></div>
+      </section>
+
+      <!-- Debt & Loan Ledger Section -->
+      <section class="card">
+        <div class="card-title">
+          <span>Debt & Loan Ledger</span>
+          <button class="btn-sm" onclick="toggleDebtForm()">+ New Debt</button>
+        </div>
+
+        <div id="debtForm" style="display: none;" class="form-grid">
+          <input type="text" id="debtTitle" placeholder="Loan Name (e.g. Credit Card)" class="form-full" />
+          <div>
+            <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Original Principal:</label>
+            <input type="number" id="debtOriginal" placeholder="e.g. 50000" step="0.01" style="width:100%;" />
+          </div>
+          <div>
+            <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Current Balance:</label>
+            <input type="number" id="debtCurrent" placeholder="e.g. 35000" step="0.01" style="width:100%;" />
+          </div>
+          <div>
+            <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">APR Rate (%):</label>
+            <input type="number" id="debtApr" placeholder="e.g. 12" step="0.1" style="width:100%;" />
+          </div>
+          <div>
+            <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Monthly Payment:</label>
+            <input type="number" id="debtMonthly" placeholder="e.g. 2500" step="0.01" style="width:100%;" />
+          </div>
+          <button class="btn-submit" onclick="addDebt()">Save Loan Entry</button>
+          <button class="btn-secondary" onclick="toggleDebtForm()">Cancel</button>
+        </div>
+
+        <div class="debt-list" id="debtList"></div>
+      </section>
+    </main>
+
+  </div>
+
+  <!-- ==========================================================================
+     BOTTOM NAVIGATION DOCK
+     ========================================================================== -->
+  <nav class="bottom-nav-dock">
+    <button class="nav-item-btn active" id="navBtnHome" onclick="switchView('home')">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Home</span>
+    </button>
+
+    <div class="nav-add-btn-wrapper">
+      <button class="nav-add-btn" onclick="openAddTxModal()" title="Add Transaction">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      </button>
+    </div>
+
+    <button class="nav-item-btn" id="navBtnAnalytics" onclick="switchView('analytics')">
+      <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+      <span>Insights</span>
+    </button>
+  </nav>
+
+  <!-- ==========================================================================
+     MODALS SECTION
+     ========================================================================== -->
+
+  <!-- MODAL 1: Categorized Add Account Selection Directory -->
+  <div class="modal-overlay" id="accountSelectionModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>Select Account Directory</span>
+        <button class="btn-icon" onclick="closeCategorizedAccountsModal()">✕</button>
+      </div>
+
+      <!-- Category Filter Chips in exact specified order: navigable left/right via
+           the arrow buttons, mouse wheel, drag, or touch swipe -->
+      <div class="category-chip-nav">
+        <button class="cat-nav-arrow" onclick="scrollCategoryBar(-1)" title="Scroll left" aria-label="Scroll categories left">‹</button>
+        <div class="category-chip-bar" id="categoryChipBar">
+          <button class="cat-chip active" onclick="filterAccountCategory('Wallet', this)">Wallet</button>
+          <button class="cat-chip" onclick="filterAccountCategory('Savings', this)">Savings</button>
+          <button class="cat-chip" onclick="filterAccountCategory('Credit', this)">Credit</button>
+          <button class="cat-chip" onclick="filterAccountCategory('Loans', this)">Loans</button>
+          <button class="cat-chip" onclick="filterAccountCategory('Investments', this)">Investments</button>
+          <button class="cat-chip" onclick="filterAccountCategory('Insurance', this)">Insurance</button>
+          <button class="cat-chip" onclick="filterAccountCategory('Assets', this)">Assets</button>
+          <button class="cat-chip" onclick="filterAccountCategory('Receivable', this)">Receivable</button>
+        </div>
+        <button class="cat-nav-arrow" onclick="scrollCategoryBar(1)" title="Scroll right" aria-label="Scroll categories right">›</button>
+      </div>
+
+      <!-- Account Directory Search -->
+      <input type="text" id="accountSearchInput" placeholder="Search accounts or banks..." onkeyup="renderAccountDirectoryTemplates()" />
+
+      <!-- Account List -->
+      <div class="template-list" id="accountDirectoryList"></div>
+
+      <button class="btn-secondary" onclick="closeCategorizedAccountsModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Create / Set Balance Prompt for Selected Account Template -->
+  <div class="modal-overlay" id="accountAmountModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span id="accountAmountModalTitle">Set Initial Balance</span>
+        <button class="btn-icon" onclick="closeAccountAmountModal()">✕</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-full" style="display: flex; align-items: center; gap: 10px; background: var(--bg-input); padding: 10px; border-radius: 12px; border: 1px solid var(--border-color);">
+          <img id="selectedAccountIcon" src="" class="wallet-icon-img" alt="" />
+          <div>
+            <div style="font-weight: 700; font-size: 0.88rem;" id="selectedAccountName">Account</div>
+            <div style="font-size: 0.68rem; color: var(--accent-primary); font-weight: 700;" id="selectedAccountCategory">Category</div>
+          </div>
+        </div>
+
+        <div class="form-full">
+          <label style="font-size: 0.68rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Custom Account Label (Optional):</label>
+          <input type="text" id="customAccountLabelInput" placeholder="e.g. My Primary GCash, BPI Savings" style="width:100%;" />
+        </div>
+
+        <div class="form-full">
+          <label style="font-size: 0.68rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Initial Balance / Current Value (₱):</label>
+          <input type="number" id="initialBalanceInput" placeholder="0.00" step="0.01" style="width:100%;" />
+        </div>
+
+        <button class="btn-submit form-full" onclick="confirmAddAccountFromTemplate()">+ Save Account</button>
+        <button class="btn-secondary form-full" onclick="closeAccountAmountModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Add Transaction -->
+  <div class="modal-overlay" id="addTxModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>Add Transaction</span>
+        <button class="btn-icon" onclick="closeAddTxModal()">✕</button>
+      </div>
+      <div class="form-grid">
+        <input type="text" id="descInput" placeholder="Title (e.g. Salary, Coffee)" class="form-full" />
+        <input type="number" id="amountInput" placeholder="Amount" step="0.01" />
+        
+        <select id="typeInput" onchange="handleTypeChange('add')">
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+          <option value="investment">Investment</option>
+          <option value="transfer">Transfer</option>
+        </select>
+
+        <div class="form-full" id="fromAccountGroup">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 2px;" id="fromAccountLabel">Wallet / Account:</label>
+          <select id="accountSelectInput" style="width: 100%;"></select>
+        </div>
+
+        <div class="form-full" id="toAccountGroup" style="display: none;">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 2px;">To Wallet / Account:</label>
+          <select id="toAccountSelectInput" style="width: 100%;"></select>
+        </div>
+
+        <select id="categoryInput" class="form-full">
+          <option value="Bills">Bills</option>
+          <option value="Education">Education</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Financial & Debt">Financial & Debt</option>
+          <option value="Food & Dining">Food & Dining</option>
+          <option value="Health & Personal Care">Health & Personal Care</option>
+          <option value="Housing & Utilities">Housing & Utilities</option>
+          <option value="Investment">Investment</option>
+          <option value="Others">Others</option>
+          <option value="Salary">Salary</option>
+          <option value="Shopping">Shopping</option>
+          <option value="Transportation">Transportation</option>
+          <option value="Travel">Travel</option>
+        </select>
+
+        <div class="form-full">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Transaction Date:</label>
+          <input type="date" id="txDateInput" style="width: 100%;" />
+        </div>
+
+        <label class="checkbox-group form-full">
+          <input type="checkbox" id="recurringInput" />
+          Mark as Recurring (Monthly)
+        </label>
+
+        <button class="btn-submit form-full" onclick="addTransaction()">+ Save Transaction</button>
+        <button class="btn-secondary form-full" onclick="closeAddTxModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Settings & Tools -->
+  <div class="modal-overlay" id="menuModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>Settings & Backup</span>
+        <button class="btn-icon" onclick="closeMenuModal()">✕</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-full" style="padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+          <button class="theme-toggle-btn" onclick="toggleTheme()">
+            <span id="themeIcon">☀️</span>
+            <span id="themeLabel">Light Mode</span>
+          </button>
+        </div>
+
+        <div class="form-full">
+          <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Select Currency:</label>
+          <select id="currencySelector" style="width: 100%;" onchange="changeCurrency(this.value)">
+            <option value="₱">PHP (₱)</option>
+            <option value="$">USD ($)</option>
+            <option value="€">EUR (€)</option>
+            <option value="¥">JPY (¥)</option>
+          </select>
+        </div>
+
+        <div class="form-full" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+          <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 8px;">Data Backup & Restore:</label>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn-secondary" onclick="exportDataJSON()">📥 Backup Data (JSON)</button>
+            <input type="file" id="importJsonInput" accept=".json" style="display:none" onchange="importDataJSON(event)" />
+            <button class="btn-secondary" onclick="document.getElementById('importJsonInput').click()">📤 Restore Data (JSON)</button>
+            <button class="btn-secondary" onclick="exportCSV()">📊 Export Transactions (CSV)</button>
+          </div>
+        </div>
+
+        <button class="btn-submit form-full" onclick="closeMenuModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: Deposit Goal Modal -->
+  <div class="modal-overlay" id="depositModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span id="depositModalTitle">Deposit Funds</span>
+        <button class="btn-icon" onclick="closeDepositModal()">✕</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-full">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Goal Progress:</label>
+          <div style="font-weight: 700; font-size: 0.88rem;" id="depositGoalInfo">₱0.00 / ₱0.00</div>
+        </div>
+
+        <div class="form-full">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Deposit Amount:</label>
+          <input type="number" id="depositAmountInput" placeholder="0.00" step="0.01" style="width: 100%;" />
+        </div>
+
+        <button class="btn-submit form-full" onclick="confirmDeposit()">Confirm Deposit</button>
+        <button class="btn-secondary form-full" onclick="closeDepositModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6: Pay Debt Modal -->
+  <div class="modal-overlay" id="payDebtModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span id="payDebtModalTitle">Log Debt Payment</span>
+        <button class="btn-icon" onclick="closePayDebtModal()">✕</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-full">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Remaining Principal:</label>
+          <div style="font-weight: 700; font-size: 0.88rem;" id="payDebtInfo">₱0.00</div>
+        </div>
+
+        <div class="form-full">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Payment Amount:</label>
+          <input type="number" id="payDebtAmountInput" placeholder="0.00" step="0.01" style="width: 100%;" />
+        </div>
+
+        <button class="btn-submit form-full" onclick="confirmDebtPayment()">Confirm Payment</button>
+        <button class="btn-secondary form-full" onclick="closePayDebtModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 7: Edit Debt Modal -->
+  <div class="modal-overlay" id="editDebtModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>Edit Debt Record</span>
+        <button class="btn-icon" onclick="closeEditDebtModal()">✕</button>
+      </div>
+      <div class="form-grid">
+        <input type="text" id="editDebtTitle" placeholder="Loan Name" class="form-full" />
+        <div>
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Original Principal:</label>
+          <input type="number" id="editDebtOriginal" step="0.01" style="width: 100%;" />
+        </div>
+        <div>
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Current Balance:</label>
+          <input type="number" id="editDebtCurrent" step="0.01" style="width: 100%;" />
+        </div>
+        <div>
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">APR Rate (%):</label>
+          <input type="number" id="editDebtApr" step="0.1" style="width: 100%;" />
+        </div>
+        <div>
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Monthly Payment:</label>
+          <input type="number" id="editDebtMonthly" step="0.01" style="width: 100%;" />
+        </div>
+        <button class="btn-submit form-full" onclick="saveDebtEdit()">Save Changes</button>
+        <button class="btn-secondary form-full" onclick="closeEditDebtModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 8: Edit Transaction Modal -->
+  <div class="modal-overlay" id="editTxModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>Edit Transaction</span>
+        <button class="btn-icon" onclick="closeTxModal()">✕</button>
+      </div>
+      <div class="form-grid">
+        <input type="text" id="editTxDesc" placeholder="Title" class="form-full" />
+        <input type="number" id="editTxAmount" placeholder="Amount" step="0.01" />
+        
+        <select id="editTxType" onchange="handleTypeChange('edit')">
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+          <option value="investment">Investment</option>
+          <option value="transfer">Transfer</option>
+        </select>
+
+        <div class="form-full">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;" id="editFromAccountLabel">Wallet / Account:</label>
+          <select id="editTxAccount" style="width: 100%;"></select>
+        </div>
+
+        <div class="form-full" id="editToAccountGroup" style="display: none;">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">To Wallet / Account:</label>
+          <select id="editTxToAccount" style="width: 100%;"></select>
+        </div>
+
+        <select id="editTxCategory" class="form-full">
+          <option value="Bills">Bills</option>
+          <option value="Education">Education</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Financial & Debt">Financial & Debt</option>
+          <option value="Food & Dining">Food & Dining</option>
+          <option value="Health & Personal Care">Health & Personal Care</option>
+          <option value="Housing & Utilities">Housing & Utilities</option>
+          <option value="Investment">Investment</option>
+          <option value="Others">Others</option>
+          <option value="Salary">Salary</option>
+          <option value="Shopping">Shopping</option>
+          <option value="Transportation">Transportation</option>
+          <option value="Travel">Travel</option>
+        </select>
+
+        <div class="form-full">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Transaction Date:</label>
+          <input type="date" id="editTxDate" style="width: 100%;" />
+        </div>
+
+        <label class="checkbox-group form-full">
+          <input type="checkbox" id="editTxRecurring" />
+          Mark as Recurring (Monthly)
+        </label>
+
+        <button class="btn-submit form-full" onclick="saveTxEdit()">Save Changes</button>
+        <button class="btn-secondary form-full" onclick="closeTxModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 9: Edit Goal Modal -->
+  <div class="modal-overlay" id="editGoalModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>Edit Savings Goal</span>
+        <button class="btn-icon" onclick="closeGoalModal()">✕</button>
+      </div>
+      <div class="form-grid">
+        <input type="text" id="editGoalTitle" placeholder="Goal Name" class="form-full" />
+        <div>
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Target Amount:</label>
+          <input type="number" id="editGoalTarget" style="width: 100%;" />
+        </div>
+        <div>
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Saved Deposit:</label>
+          <input type="number" id="editGoalSaved" style="width: 100%;" />
+        </div>
+        <div class="form-full">
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Target Date:</label>
+          <input type="date" id="editGoalTargetDate" style="width: 100%;" />
+        </div>
+        <button class="btn-submit form-full" onclick="saveGoalEdit()">Save Changes</button>
+        <button class="btn-secondary form-full" onclick="closeGoalModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+     APPLICATION LOGIC ENGINE
+     ========================================================================== -->
+  <script>
+    /* ==========================================================================
+       DATA STORAGE ENGINE
+       Keys: moneytor_transactions, moneytor_user_accounts, moneytor_goals,
+             moneytor_debts, moneytor_budgets, moneytor_privacy, moneytor_theme
+       ========================================================================== */
+    let isPrivacyMode = localStorage.getItem('moneytor_privacy') === 'true';
+    let currentTheme = localStorage.getItem('moneytor_theme') || 'dark';
+    let currentCurrency = localStorage.getItem('moneytor_currency') || '₱';
+
+    let transactions = JSON.parse(localStorage.getItem('moneytor_transactions')) || [];
+    let goals = JSON.parse(localStorage.getItem('moneytor_goals')) || [];
+    let debts = JSON.parse(localStorage.getItem('moneytor_debts')) || [];
+    let budgets = JSON.parse(localStorage.getItem('moneytor_budgets')) || {};
+
+    /* Default User Active Accounts (Initial Seed) — icons are no longer stored
+       here; they're generated fresh at render time by getAccountIconDataUri()
+       below, from the account's name + category. */
+    let userAccounts = JSON.parse(localStorage.getItem('moneytor_user_accounts')) || [
+      { id: 1, name: 'Cash on Hand', category: 'Wallet', balance: 1000 },
+      { id: 2, name: 'GCash', category: 'Wallet', balance: 2500 }
+    ];
+
+    /* ==========================================================================
+       ACCOUNT ICON ENGINE
+       Every account gets a crisp, brand-colored monogram badge generated as an
+       inline SVG and returned as a base64 data-URI. This replaces the old
+       generic category icons (which also had a bug: their double-quoted SVG
+       attributes broke out of double-quoted src="..."/onclick="..." attributes
+       when inserted into the page, hiding every logo). Base64 output can never
+       contain a stray quote character, so that class of bug can't recur, and
+       since the icon is computed fresh from name+category every time it's
+       rendered (never trusted from storage), any account saved to
+       localStorage before this fix will now display correctly too.
+       Everything here is generated locally with no network calls, so it
+       always works fully offline.
+       ========================================================================== */
+
+    /* Real-world brand colors for recognized PH financial institutions/apps,
+       keyed by lowercase account name. Falls back to a category color, then
+       to a deterministic hash-based color, so every entry always gets a
+       distinct, consistent badge. */
+    const BRAND_COLORS = {
+      'gcash': '#0072CE', 'gcash jr': '#0072CE',
+      'maya': '#00C16E', 'maya savings': '#00C16E', 'maya investment funds': '#00C16E',
+      'grabpay': '#00B14F',
+      'coins.ph': '#1B3A6B',
+      'shopeepay': '#EE4D2D',
+      'lazada wallet': '#0F146D',
+      'palawanpay': '#DA291C',
+      'cebuana xpress': '#EF3E42',
+      'unionbank e-wallet': '#F7941D', 'unionbank savings': '#F7941D', 'unionbank credit card': '#F7941D',
+      'tayocash': '#2D9CDB',
+      'bdo unibank savings': '#003DA5', 'bdo credit card': '#003DA5', 'bdo unibank uitf': '#003DA5',
+      'bdo life': '#003DA5', 'bdo personal / auto / home loan': '#003DA5',
+      'bpi savings account': '#C8102E', 'bpi credit card': '#C8102E',
+      'bpi investment funds': '#C8102E', 'bpi personal / housing loan': '#C8102E',
+      'metrobank savings': '#00205B', 'metrobank credit card': '#00205B', 'metrobank loan': '#00205B',
+      'landbank savings': '#00843D', 'landbank loan': '#00843D',
+      'rcbc savings': '#FDB913', 'rcbc credit card': '#FDB913', "diskartech (rcbc)": '#FDB913',
+      'security bank savings': '#E4002B', 'security bank credit card': '#E4002B',
+      'security bank loan': '#E4002B', 'sb finance': '#E4002B',
+      'china bank savings': '#ED1C24', 'chinabank credit card': '#ED1C24',
+      'pnb savings account': '#7A1E22', 'pnb credit card': '#7A1E22',
+      'eastwest bank savings': '#00558C', 'eastwest credit card': '#00558C', 'komo (eastwest)': '#00558C',
+      'psbank savings': '#FDB515',
+      'cimb bank philippines': '#7A1F2B',
+      'tonik digital bank': '#00B3A4',
+      'seabank philippines': '#EE4D2D',
+      'gotyme bank': '#9B26B6',
+      'uno digital bank': '#1D4ED8',
+      'hsbc credit card': '#DB0011',
+      'maybank credit card': '#FBC02D',
+      'sss salary loan': '#00A651',
+      'pag-ibig housing / calamity loan': '#0033A0', 'pag-ibig mp2 savings': '#0033A0',
+      'home credit philippines': '#E4002B',
+      'cashalo': '#FF6D00',
+      'tala lending': '#00A19A',
+      'digido': '#6C2EB5',
+      'col financial stock portfolio': '#004F9F',
+      'first metro sec (fmsec)': '#00205B',
+      'pse stocks portfolio': '#002D62',
+      'sun life philippines policy': '#F7941D',
+      'pru life uk policy': '#E4032E',
+      'axa philippines policy': '#00008F',
+      'manulife philippines': '#00A758',
+      'fwd life insurance': '#FF5F00',
+      'aia philippines policy': '#C8102E',
+      'allianz pnb life': '#003781',
+      'insular life (inlife)': '#00457C',
+      'chubb insurance': '#00539B'
+    };
+
+    const CATEGORY_FALLBACK_COLORS = {
+      'Wallet': '#10B981', 'Savings': '#3B82F6', 'Credit': '#F59E0B',
+      'Loans': '#EF4444', 'Investments': '#A78BFA', 'Insurance': '#34D399',
+      'Assets': '#F43F5E', 'Receivable': '#8B5CF6'
+    };
+
+    const ICON_STOPWORDS = new Set(['on', 'of', 'the', 'and', 'for', 'in', 'a', 'an']);
+
+    function getInitials(name) {
+      const clean = String(name).replace(/\([^)]*\)/g, '').trim();
+      const words = clean.split(/\s+/).filter(w => w && /[A-Za-z0-9]/.test(w) && !ICON_STOPWORDS.has(w.toLowerCase()));
+      if (words.length === 0) return '??';
+      const first = words[0];
+      if (words.length === 1) return first.substring(0, 2).toUpperCase();
+      if (/^[A-Z0-9]{2,6}$/.test(first)) return first.substring(0, 2).toUpperCase();
+      return (first[0] + words[1][0]).toUpperCase();
+    }
+
+    function hashHue(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+      return hash % 360;
+    }
+
+    function getBrandColor(name, category) {
+      const key = String(name).trim().toLowerCase();
+      if (BRAND_COLORS[key]) return BRAND_COLORS[key];
+      if (CATEGORY_FALLBACK_COLORS[category]) return CATEGORY_FALLBACK_COLORS[category];
+      return `hsl(${hashHue(String(name))}, 60%, 42%)`;
+    }
+
+    function getAccountIconDataUri(name, category) {
+      const color = getBrandColor(name, category);
+      const initials = getInitials(name);
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>` +
+        `<rect width='64' height='64' rx='16' fill='${color}'/>` +
+        `<text x='32' y='41' font-family='Arial, Helvetica, sans-serif' font-size='24' font-weight='700' fill='#FFFFFF' text-anchor='middle'>${initials}</text>` +
+        `</svg>`;
+      return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+    }
+
+    /* Master Templates Directory (Top 15-20 PH Entities per category) */
+    const masterAccountDirectory = [
+      /* 1. Wallet (Cash on hand FIRST) */
+      { name: 'Cash on Hand', category: 'Wallet' },
+      { name: 'GCash', category: 'Wallet' },
+      { name: 'Maya', category: 'Wallet' },
+      { name: 'GrabPay', category: 'Wallet' },
+      { name: 'Coins.ph', category: 'Wallet' },
+      { name: 'ShopeePay', category: 'Wallet' },
+      { name: 'Lazada Wallet', category: 'Wallet' },
+      { name: 'PalawanPay', category: 'Wallet' },
+      { name: 'Starpay', category: 'Wallet' },
+      { name: 'Bayad App', category: 'Wallet' },
+      { name: 'UnionBank E-Wallet', category: 'Wallet' },
+      { name: 'TayoCash', category: 'Wallet' },
+      { name: 'Cebuana Xpress', category: 'Wallet' },
+      { name: 'TokTok Wallet', category: 'Wallet' },
+      { name: 'Dragonpay', category: 'Wallet' },
+      { name: 'GCash Jr', category: 'Wallet' },
+
+      /* 2. Savings */
+      { name: 'BDO Unibank Savings', category: 'Savings' },
+      { name: 'BPI Savings Account', category: 'Savings' },
+      { name: 'Metrobank Savings', category: 'Savings' },
+      { name: 'LandBank Savings', category: 'Savings' },
+      { name: 'RCBC Savings', category: 'Savings' },
+      { name: 'Security Bank Savings', category: 'Savings' },
+      { name: 'China Bank Savings', category: 'Savings' },
+      { name: 'UnionBank Savings', category: 'Savings' },
+      { name: 'PNB Savings Account', category: 'Savings' },
+      { name: 'EastWest Bank Savings', category: 'Savings' },
+      { name: 'PSBank Savings', category: 'Savings' },
+      { name: 'CIMB Bank Philippines', category: 'Savings' },
+      { name: 'Tonik Digital Bank', category: 'Savings' },
+      { name: 'Maya Savings', category: 'Savings' },
+      { name: 'DiskarTech (RCBC)', category: 'Savings' },
+      { name: 'SeaBank Philippines', category: 'Savings' },
+      { name: 'GoTyme Bank', category: 'Savings' },
+      { name: 'Uno Digital Bank', category: 'Savings' },
+      { name: 'OwnBank', category: 'Savings' },
+      { name: 'Komo (EastWest)', category: 'Savings' },
+
+      /* 3. Credit */
+      { name: 'BDO Credit Card', category: 'Credit' },
+      { name: 'BPI Credit Card', category: 'Credit' },
+      { name: 'Metrobank Credit Card', category: 'Credit' },
+      { name: 'UnionBank Credit Card', category: 'Credit' },
+      { name: 'HSBC Credit Card', category: 'Credit' },
+      { name: 'Security Bank Credit Card', category: 'Credit' },
+      { name: 'RCBC Credit Card', category: 'Credit' },
+      { name: 'EastWest Credit Card', category: 'Credit' },
+      { name: 'PNB Credit Card', category: 'Credit' },
+      { name: 'Maybank Credit Card', category: 'Credit' },
+      { name: 'AUB Credit Card', category: 'Credit' },
+      { name: 'Chinabank Credit Card', category: 'Credit' },
+
+      /* 4. Loans */
+      { name: 'BDO Personal / Auto / Home Loan', category: 'Loans' },
+      { name: 'BPI Personal / Housing Loan', category: 'Loans' },
+      { name: 'Metrobank Loan', category: 'Loans' },
+      { name: 'LandBank Loan', category: 'Loans' },
+      { name: 'Security Bank Loan', category: 'Loans' },
+      { name: 'SSS Salary Loan', category: 'Loans' },
+      { name: 'Pag-IBIG Housing / Calamity Loan', category: 'Loans' },
+      { name: 'Home Credit Philippines', category: 'Loans' },
+      { name: 'Cashalo', category: 'Loans' },
+      { name: 'Tala Lending', category: 'Loans' },
+      { name: 'Digido', category: 'Loans' },
+      { name: 'SB Finance', category: 'Loans' },
+
+      /* 5. Investments */
+      { name: 'COL Financial Stock Portfolio', category: 'Investments' },
+      { name: 'First Metro Sec (FMSEC)', category: 'Investments' },
+      { name: 'BDO Unibank UITF', category: 'Investments' },
+      { name: 'BPI Investment Funds', category: 'Investments' },
+      { name: 'GInvest (ATRAM / SBFM)', category: 'Investments' },
+      { name: 'Maya Investment Funds', category: 'Investments' },
+      { name: 'Pag-IBIG MP2 Savings', category: 'Investments' },
+      { name: 'PSE Stocks Portfolio', category: 'Investments' },
+      { name: 'Mutual Funds Account', category: 'Investments' },
+      { name: 'Retail Treasury Bonds (RTB)', category: 'Investments' },
+      { name: 'Real Estate Investment Property', category: 'Investments' },
+      { name: 'Crypto Holdings (Coins / PDAX)', category: 'Investments' },
+
+      /* 6. Insurance */
+      { name: 'Sun Life Philippines Policy', category: 'Insurance' },
+      { name: 'Pru Life UK Policy', category: 'Insurance' },
+      { name: 'AXA Philippines Policy', category: 'Insurance' },
+      { name: 'Insular Life (InLife)', category: 'Insurance' },
+      { name: 'Manulife Philippines', category: 'Insurance' },
+      { name: 'FWD Life Insurance', category: 'Insurance' },
+      { name: 'BDO Life', category: 'Insurance' },
+      { name: 'Allianz PNB Life', category: 'Insurance' },
+      { name: 'AIA Philippines Policy', category: 'Insurance' },
+      { name: 'Chubb Insurance', category: 'Insurance' },
+
+      /* 7. Assets */
+      { name: 'Real Estate Property / Land', category: 'Assets' },
+      { name: 'Automobile / Vehicle Value', category: 'Assets' },
+      { name: 'Jewelry & Gold Assets', category: 'Assets' },
+      { name: 'Business Equity / Shares', category: 'Assets' },
+      { name: 'Machinery & Equipment', category: 'Assets' },
+      { name: 'Collectibles & Art Assets', category: 'Assets' },
+
+      /* 8. Receivable */
+      { name: 'Personal Money IOUs (Friends/Family)', category: 'Receivable' },
+      { name: 'Unpaid Client Invoices', category: 'Receivable' },
+      { name: 'Salary / Bonus Receivable', category: 'Receivable' },
+      { name: 'Tax Refund Receivable', category: 'Receivable' },
+      { name: 'Rental Income Receivable', category: 'Receivable' },
+      { name: 'Business Accounts Receivable', category: 'Receivable' }
+    ];
+
+    let activeDirectoryCategory = 'Wallet';
+    let selectedTemplateForAdd = null;
+    let chartTimeframe = 'monthly';
+    let myChart = null;
+
+    /* Global Privacy Mask Helper Function */
+    function maskAmount(amountVal) {
+      if (isPrivacyMode) return '••••••';
+      return `${currentCurrency}${amountVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function togglePrivacyMode() {
+      isPrivacyMode = !isPrivacyMode;
+      localStorage.setItem('moneytor_privacy', isPrivacyMode);
+      document.getElementById('globalEyeBtn').innerText = isPrivacyMode ? '🙈' : '👁️';
+      renderApp();
+    }
+
+    function initApp() {
+      applyTheme(currentTheme);
+      document.getElementById('globalEyeBtn').innerText = isPrivacyMode ? '🙈' : '👁️';
+      renderApp();
+    }
+
+    function switchView(viewName) {
+      document.getElementById('viewHome').classList.toggle('active', viewName === 'home');
+      document.getElementById('viewAnalytics').classList.toggle('active', viewName === 'analytics');
+      document.getElementById('navBtnHome').classList.toggle('active', viewName === 'home');
+      document.getElementById('navBtnAnalytics').classList.toggle('active', viewName === 'analytics');
+
+      if (viewName === 'analytics') {
+        renderApp();
+      }
+    }
+
+    function autoSave() {
+      localStorage.setItem('moneytor_transactions', JSON.stringify(transactions));
+      localStorage.setItem('moneytor_user_accounts', JSON.stringify(userAccounts));
+      localStorage.setItem('moneytor_goals', JSON.stringify(goals));
+      localStorage.setItem('moneytor_debts', JSON.stringify(debts));
+      localStorage.setItem('moneytor_budgets', JSON.stringify(budgets));
+      localStorage.setItem('moneytor_currency', currentCurrency);
+      localStorage.setItem('moneytor_theme', currentTheme);
+    }
+
+    /* Modal Directory Functions */
+    function openCategorizedAccountsModal() {
+      document.getElementById('accountSelectionModal').classList.add('active');
+      renderAccountDirectoryTemplates();
+    }
+
+    function closeCategorizedAccountsModal() {
+      document.getElementById('accountSelectionModal').classList.remove('active');
+    }
+
+    function filterAccountCategory(catName, btnElem) {
+      activeDirectoryCategory = catName;
+      document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+      if (btnElem) btnElem.classList.add('active');
+      renderAccountDirectoryTemplates();
+      if (btnElem && btnElem.scrollIntoView) {
+        btnElem.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+
+    /* Left/Right navigation for the category chip bar (arrow buttons) */
+    function scrollCategoryBar(direction) {
+      const bar = document.getElementById('categoryChipBar');
+      if (!bar) return;
+      bar.scrollBy({ left: direction * 140, behavior: 'smooth' });
+    }
+
+    /* Let a normal vertical mouse wheel scroll the chip bar horizontally too,
+       so it's easily navigable left-to-right on desktop (e.g. via Live Server)
+       and not just via touch swipe. */
+    (function enableWheelHorizontalScroll() {
+      const bar = document.getElementById('categoryChipBar');
+      if (!bar) return;
+      bar.addEventListener('wheel', (e) => {
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+          bar.scrollBy({ left: e.deltaY, behavior: 'auto' });
+          e.preventDefault();
+        }
+      }, { passive: false });
+    })();
+
+    function renderAccountDirectoryTemplates() {
+      const query = (document.getElementById('accountSearchInput').value || '').toLowerCase();
+      const container = document.getElementById('accountDirectoryList');
+      container.innerHTML = '';
+
+      const filtered = masterAccountDirectory.filter(item => {
+        const matchesCat = item.category === activeDirectoryCategory;
+        const matchesQuery = item.name.toLowerCase().includes(query) || item.category.toLowerCase().includes(query);
+        return matchesCat && matchesQuery;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-text">No accounts matching "${query}" in ${activeDirectoryCategory}</div>`;
+        return;
+      }
+
+      filtered.forEach(tmpl => {
+        const isAdded = userAccounts.some(u => u.name.toLowerCase() === tmpl.name.toLowerCase());
+        const iconUri = getAccountIconDataUri(tmpl.name, tmpl.category);
+        container.insertAdjacentHTML('beforeend', `
+          <div class="template-item" onclick="promptAddAccountAmount('${escAttr(tmpl.name)}', '${escAttr(tmpl.category)}')">
+            <div class="template-item-left">
+              <img src="${iconUri}" class="wallet-icon-img" alt="" />
+              <span class="template-title">${tmpl.name}</span>
+            </div>
+            <button class="btn-sm" style="background:var(--accent-primary); color:#000;">${isAdded ? '+ Add Another' : '+ Select'}</button>
+          </div>
+        `);
+      });
+    }
+
+    function promptAddAccountAmount(name, category) {
+      const icon = getAccountIconDataUri(name, category);
+      selectedTemplateForAdd = { name, category, icon };
+      document.getElementById('selectedAccountName').innerText = name;
+      document.getElementById('selectedAccountCategory').innerText = category.toUpperCase();
+      document.getElementById('selectedAccountIcon').src = icon;
+      document.getElementById('customAccountLabelInput').value = name;
+      document.getElementById('initialBalanceInput').value = '';
+
+      closeCategorizedAccountsModal();
+      document.getElementById('accountAmountModal').classList.add('active');
+    }
+
+    function closeAccountAmountModal() {
+      selectedTemplateForAdd = null;
+      document.getElementById('accountAmountModal').classList.remove('active');
+    }
+
+    function confirmAddAccountFromTemplate() {
+      if (!selectedTemplateForAdd) return;
+
+      const label = document.getElementById('customAccountLabelInput').value.trim() || selectedTemplateForAdd.name;
+      const initialBal = parseFloat(document.getElementById('initialBalanceInput').value) || 0;
+
+      const newAcc = {
+        id: Date.now(),
+        name: label,
+        category: selectedTemplateForAdd.category,
+        icon: selectedTemplateForAdd.icon,
+        balance: initialBal
+      };
+
+      userAccounts.push(newAcc);
+      autoSave();
+      renderApp();
+      closeAccountAmountModal();
+    }
+
+    function deleteUserAccount(accId) {
+      if (userAccounts.length <= 1) {
+        alert('You must maintain at least one active account.');
+        return;
+      }
+      if (confirm('Delete this account from your active ledger?')) {
+        userAccounts = userAccounts.filter(a => a.id !== accId);
+        autoSave();
+        renderApp();
+      }
+    }
+
+    /* Modal Opens */
+    function openAddTxModal() {
+      document.getElementById('txDateInput').value = new Date().toISOString().slice(0, 10);
+      handleTypeChange('add');
+      document.getElementById('addTxModal').classList.add('active');
+    }
+
+    function closeAddTxModal() { document.getElementById('addTxModal').classList.remove('active'); }
+    function openMenuModal() { document.getElementById('menuModal').classList.add('active'); }
+    function closeMenuModal() { document.getElementById('menuModal').classList.remove('active'); }
+
+    function handleTypeChange(mode) {
+      const isAdd = mode === 'add';
+      const type = document.getElementById(isAdd ? 'typeInput' : 'editTxType').value;
+      const toGroup = document.getElementById(isAdd ? 'toAccountGroup' : 'editToAccountGroup');
+      const fromLabel = document.getElementById(isAdd ? 'fromAccountLabel' : 'editFromAccountLabel');
+
+      if (type === 'transfer') {
+        toGroup.style.display = 'block';
+        fromLabel.innerText = 'From Account:';
+      } else {
+        toGroup.style.display = 'none';
+        fromLabel.innerText = 'Account:';
+      }
+    }
+
+    /* Transactions CRUD */
+    function addTransaction() {
+      const desc = document.getElementById('descInput').value.trim();
+      const amount = parseFloat(document.getElementById('amountInput').value);
+      const type = document.getElementById('typeInput').value;
+      const account = document.getElementById('accountSelectInput').value;
+      const toAccount = document.getElementById('toAccountSelectInput').value;
+      const category = document.getElementById('categoryInput').value;
+      const rawDate = document.getElementById('txDateInput').value || new Date().toISOString().slice(0, 10);
+      const isRecurring = document.getElementById('recurringInput').checked;
+
+      if (!desc || isNaN(amount) || amount <= 0) { alert('Please enter a valid title and amount.'); return; }
+      if (type === 'transfer' && account === toAccount) { alert('Origin and destination accounts must be different.'); return; }
+
+      transactions.unshift({
+        id: Date.now(),
+        desc,
+        amount,
+        type,
+        account: account || (userAccounts[0] ? userAccounts[0].name : 'Cash'),
+        toAccount: type === 'transfer' ? toAccount : null,
+        category: type === 'transfer' ? 'Financial & Debt' : category,
+        isoDate: rawDate,
+        isRecurring,
+        date: formatDate(rawDate)
+      });
+
+      autoSave();
+      renderApp();
+      closeAddTxModal();
+    }
+
+    function deleteTransaction(id) {
+      if (confirm('Delete this transaction?')) {
+        transactions = transactions.filter(t => t.id !== id);
+        autoSave();
+        renderApp();
+      }
+    }
+
+    /* Budgets & Goals */
+    function toggleBudgetForm() {
+      const form = document.getElementById('budgetForm');
+      form.style.display = form.style.display === 'none' ? 'grid' : 'none';
+    }
+
+    function saveBudget() {
+      const cat = document.getElementById('budgetCategory').value;
+      const amt = parseFloat(document.getElementById('budgetAmount').value);
+      if (isNaN(amt) || amt <= 0) return;
+      budgets[cat] = amt;
+      autoSave();
+      renderApp();
+      toggleBudgetForm();
+    }
+
+    function deleteBudget(cat) {
+      delete budgets[cat];
+      autoSave();
+      renderApp();
+    }
+
+    function toggleGoalForm() {
+      const form = document.getElementById('goalForm');
+      form.style.display = form.style.display === 'none' ? 'grid' : 'none';
+    }
+
+    function addGoal() {
+      const title = document.getElementById('goalTitle').value.trim();
+      const target = parseFloat(document.getElementById('goalTarget').value);
+      const date = document.getElementById('goalTargetDate').value;
+      if (!title || isNaN(target) || target <= 0) return;
+
+      goals.push({ id: Date.now(), title, target, saved: 0, targetDate: date || null });
+      autoSave();
+      renderApp();
+      toggleGoalForm();
+    }
+
+    function deleteGoal(id) {
+      goals = goals.filter(g => g.id !== id);
+      autoSave();
+      renderApp();
+    }
+
+    function setChartTimeframe(tf) {
+      chartTimeframe = tf;
+      document.querySelectorAll('.segmented-control .toggle-btn').forEach(b => b.classList.remove('active'));
+      if (tf === 'daily') document.getElementById('btnTimeDaily').classList.add('active');
+      if (tf === 'weekly') document.getElementById('btnTimeWeekly').classList.add('active');
+      if (tf === 'monthly') document.getElementById('btnTimeMonthly').classList.add('active');
+      if (tf === 'yearly') document.getElementById('btnTimeYearly').classList.add('active');
+      renderApp();
+    }
+
+    function applyTheme(theme) {
+      currentTheme = theme;
+      if (currentTheme === 'light') {
+        document.body.classList.add('light-theme');
+        document.getElementById('themeIcon').innerText = '🌙';
+        document.getElementById('themeLabel').innerText = 'Dark Mode';
+      } else {
+        document.body.classList.remove('light-theme');
+        document.getElementById('themeIcon').innerText = '☀️';
+        document.getElementById('themeLabel').innerText = 'Light Mode';
+      }
+      localStorage.setItem('moneytor_theme', currentTheme);
+    }
+
+    function toggleTheme() {
+      applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+      renderApp();
+    }
+
+    /* Safely escape a string for use inside a double-quoted HTML attribute
+       (fixes account/template logos not rendering: the inline SVG data-URI
+       icons contain literal double quotes, e.g. fill="...", which were
+       terminating the src="..." / onclick="..." attribute early and
+       breaking the markup before the browser ever got to load the image). */
+    function escAttr(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    /* Central Render Function */
+    function renderApp() {
+      // 1. Calculate Account Balances
+      let netWorth = 0;
+      let totalInc = 0;
+      let totalExp = 0;
+
+      const accountBalances = {};
+      userAccounts.forEach(acc => {
+        accountBalances[acc.name] = acc.balance || 0;
+      });
+
+      transactions.forEach(tx => {
+        const accName = tx.account || (userAccounts[0] ? userAccounts[0].name : 'Cash');
+        if (tx.type === 'income') {
+          totalInc += tx.amount;
+          accountBalances[accName] = (accountBalances[accName] || 0) + tx.amount;
+        } else if (tx.type === 'expense' || tx.type === 'investment') {
+          totalExp += tx.amount;
+          accountBalances[accName] = (accountBalances[accName] || 0) - tx.amount;
+        } else if (tx.type === 'transfer' && tx.toAccount) {
+          accountBalances[accName] = (accountBalances[accName] || 0) - tx.amount;
+          accountBalances[tx.toAccount] = (accountBalances[tx.toAccount] || 0) + tx.amount;
+        }
+      });
+
+      Object.values(accountBalances).forEach(val => netWorth += val);
+
+      // Render Masked/Unmasked Amounts globally
+      document.getElementById('totalBalance').innerText = maskAmount(netWorth);
+      document.getElementById('totalIncome').innerText = maskAmount(totalInc);
+      document.getElementById('totalExpense').innerText = maskAmount(totalExp);
+
+      // 2. Populate Account Select Options Across Modals
+      const accSelects = [
+        document.getElementById('accountSelectInput'),
+        document.getElementById('toAccountSelectInput'),
+        document.getElementById('editTxAccount'),
+        document.getElementById('editTxToAccount')
+      ];
+
+      accSelects.forEach(sel => {
+        if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = userAccounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+        if (userAccounts.some(a => a.name === cur)) sel.value = cur;
+      });
+
+      const filterWalletSel = document.getElementById('filterWallet');
+      const curFilterWallet = filterWalletSel.value;
+      filterWalletSel.innerHTML = `<option value="all">All Accounts</option>` + userAccounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+      if (userAccounts.some(a => a.name === curFilterWallet) || curFilterWallet === 'all') filterWalletSel.value = curFilterWallet;
+
+      // 3. Render Active User Accounts Grid
+      const walletsContainer = document.getElementById('walletsList');
+      document.getElementById('activeAccountCount').innerText = `${userAccounts.length} Accounts`;
+      walletsContainer.innerHTML = userAccounts.map(acc => `
+        <div class="wallet-card-item">
+          <div class="wallet-card-top">
+            <div class="wallet-brand-meta">
+              <img src="${getAccountIconDataUri(acc.name, acc.category)}" class="wallet-icon-img" alt="" />
+              <span class="wallet-card-title">${acc.name}</span>
+            </div>
+            ${userAccounts.length > 1 ? `<button class="btn-icon" style="font-size:0.68rem;" onclick="deleteUserAccount(${acc.id})">✕</button>` : ''}
+          </div>
+          <span class="wallet-cat-tag">${acc.category}</span>
+          <span class="wallet-card-val">${maskAmount(accountBalances[acc.name] || 0)}</span>
+        </div>
+      `).join('');
+
+      // 4. Render Budgets List
+      const budgetContainer = document.getElementById('budgetList');
+      const budgetKeys = Object.keys(budgets);
+      budgetContainer.innerHTML = budgetKeys.length === 0 ? `<div class="empty-text">No category budget limits configured.</div>` : '';
+      budgetKeys.forEach(cat => {
+        const limit = budgets[cat];
+        let spent = 0;
+        transactions.filter(t => t.category === cat && t.type === 'expense').forEach(t => spent += t.amount);
+        const percent = Math.min(100, Math.round((spent / limit) * 100));
+        budgetContainer.insertAdjacentHTML('beforeend', `
+          <div class="budget-item">
+            <div class="budget-header">
+              <span>${cat}</span>
+              <span>${maskAmount(spent)} / ${maskAmount(limit)}</span>
+            </div>
+            <div class="hero-progress-bg">
+              <div class="hero-progress-fill" style="width: ${percent}%;"></div>
+            </div>
+            <div class="goal-actions" style="display:flex; justify-style:space-between; align-items:center;">
+              <span style="font-size:0.7rem; color:var(--text-muted);">${percent}% Used</span>
+              <button class="btn-sm btn-danger" onclick="deleteBudget('${cat}')">Remove</button>
+            </div>
+          </div>
+        `);
+      });
+
+      // 5. Render Goals List
+      const goalListContainer = document.getElementById('goalList');
+      goalListContainer.innerHTML = goals.length === 0 ? `<div class="empty-text">No active savings goals.</div>` : '';
+      goals.forEach(goal => {
+        const percent = Math.min(100, Math.round((goal.saved / goal.target) * 100));
+        goalListContainer.insertAdjacentHTML('beforeend', `
+          <div class="goal-item">
+            <div class="goal-header">
+              <span>${goal.title}</span>
+              <span>${maskAmount(goal.saved)} / ${maskAmount(goal.target)}</span>
+            </div>
+            <div class="hero-progress-bg">
+              <div class="hero-progress-fill" style="width: ${percent}%;"></div>
+            </div>
+            <div class="goal-actions" style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.7rem; color:var(--text-muted);">${percent}% Achieved</span>
+              <button class="btn-sm btn-danger" onclick="deleteGoal(${goal.id})">Remove</button>
+            </div>
+          </div>
+        `);
+      });
+
+      // 6. Render Transactions History
+      const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+      const filterType = document.getElementById('filterType').value;
+      const selectedWalletFilter = document.getElementById('filterWallet').value;
+
+      const finalFilteredTx = transactions.filter(tx => {
+        const matchesSearch = tx.desc.toLowerCase().includes(searchQuery) || tx.category.toLowerCase().includes(searchQuery);
+        const matchesType = filterType === 'all' || tx.type === filterType || (filterType === 'recurring' && tx.isRecurring);
+        const matchesWallet = selectedWalletFilter === 'all' || tx.account === selectedWalletFilter || tx.toAccount === selectedWalletFilter;
+        return matchesSearch && matchesType && matchesWallet;
+      });
+
+      const txListContainer = document.getElementById('txList');
+      txListContainer.innerHTML = finalFilteredTx.length === 0 ? `<div class="empty-text">No transactions found.</div>` : '';
+      document.getElementById('txCount').innerText = `${finalFilteredTx.length} items`;
+
+      finalFilteredTx.forEach(tx => {
+        let typeSymbol = tx.type === 'income' ? '+' : (tx.type === 'transfer' ? '↔ ' : '-');
+        let walletMeta = tx.account || 'Cash';
+        if (tx.type === 'transfer' && tx.toAccount) walletMeta = `${tx.account} ➔ ${tx.toAccount}`;
+
+        txListContainer.insertAdjacentHTML('beforeend', `
+          <div class="tx-item">
+            <div class="tx-info">
+              <div class="tx-title">${tx.desc}</div>
+              <span class="tx-meta">${walletMeta} • ${tx.category} • ${tx.date || 'No Date'}</span>
+            </div>
+            <div style="display:flex; align-items:center;">
+              <span class="tx-amount ${tx.type}">${typeSymbol}${maskAmount(tx.amount)}</span>
+              <button class="btn-icon" style="margin-left:8px;" onclick="deleteTransaction(${tx.id})">✕</button>
+            </div>
+          </div>
+        `);
+      });
+
+      renderChart(totalInc, totalExp);
+    }
+
+    /* Render Refined Timeframe Analytics Chart */
+    function renderChart(totalInc, totalExp) {
+      const ctx = document.getElementById('spendingChart').getContext('2d');
+      if (myChart) myChart.destroy();
+
+      const isLight = currentTheme === 'light';
+      const chartTextColor = isLight ? '#64748B' : '#9CA3AF';
+      const chartGridColor = isLight ? '#E2E8F0' : '#1F2C42';
+
+      let labels = ['Daily Income', 'Daily Expense'];
+      if (chartTimeframe === 'weekly') labels = ['Weekly Income', 'Weekly Expense'];
+      if (chartTimeframe === 'monthly') labels = ['Monthly Income', 'Monthly Expense'];
+      if (chartTimeframe === 'yearly') labels = ['Yearly Income', 'Yearly Expense'];
+
+      myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{ data: [totalInc, totalExp], backgroundColor: ['#34D399', '#F87171'], borderRadius: 6 }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { ticks: { color: chartTextColor }, grid: { color: chartGridColor } },
+            x: { ticks: { color: chartTextColor }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    window.onload = initApp;
+  </script>
+</body>
+</html>
