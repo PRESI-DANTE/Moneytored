@@ -4,6 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <title>Moneytor - Save more, Spend less.</title>
+
+  <!-- ==========================================================================
+     HOME SCREEN / PWA APP ICON
+     The icon reuses the app's own visual language: the --accent-gradient
+     rounded square with a white monogram, exactly how account badges are drawn.
+     The inline SVG favicon keeps this file working standalone; the PNGs and
+     manifest.json (kept alongside this file) are what phones use when the page
+     is added to a home screen.
+     ========================================================================== -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#10B981" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Moneytor" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23059669'/%3E%3Cstop offset='1' stop-color='%2310B981'/%3E%3C/linearGradient%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='32' y='45' font-family='Arial, Helvetica, sans-serif' font-size='40' font-weight='700' fill='%23FFFFFF' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -192,6 +211,13 @@
       cursor: pointer;
       font-size: 0.82rem;
       backdrop-filter: blur(4px);
+    }
+
+    .btn-eye-toggle svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+      display: block;
     }
 
     .hero-stats {
@@ -697,8 +723,8 @@
 
     <!-- ==========================================================================
        VIEW 1: HOME PAGE
-       Contains: Total Net Worth (Compact + Privacy Eye Toggle), Add Account Block,
-                 Active Accounts Grid, Transactions History
+       Contains: Total Net Worth (Compact + Privacy Eye Toggle),
+                 Accounts Layer (tiles + add tile), Transactions History
        ========================================================================== -->
     <main id="viewHome" class="app-view active">
       <header class="header">
@@ -717,9 +743,10 @@
             <span class="label">Total Net Worth</span>
             <div class="balance-amount" id="totalBalance">₱0.00</div>
           </div>
-          <!-- Global Privacy Eye Toggle Button -->
-          <button class="btn-eye-toggle" id="globalEyeBtn" onclick="togglePrivacyMode()" title="Toggle Amount Visibility">
-            👁️
+          <!-- Global Privacy Eye Toggle Button (plain eye glyph, the same kind
+               used to reveal/hide a password field) -->
+          <button class="btn-eye-toggle" id="globalEyeBtn" onclick="togglePrivacyMode()" title="Toggle Amount Visibility" aria-label="Toggle amount visibility">
+            <svg id="globalEyeIcon" viewBox="0 0 24 24" aria-hidden="true"></svg>
           </button>
         </div>
 
@@ -737,12 +764,9 @@
 
       <!-- Active Accounts Layer:
            saved account tiles + the "Add Account" tile share one layer,
-           side by side. The add tile is pinned to the bottom-right. -->
+           side by side. The add tile is pinned to the bottom-right.
+           Header row intentionally omitted — the tiles speak for themselves. -->
       <section class="card">
-        <div class="card-title">
-          <span>Active Accounts</span>
-          <span style="font-size: 0.72rem; color: var(--text-muted);" id="activeAccountCount">0 Accounts</span>
-        </div>
         <div class="entry-grid" id="walletsList"></div>
       </section>
 
@@ -801,7 +825,7 @@
       <!-- Category Budget Limits Layer: saved budgets + "Set Budget" tile -->
       <section class="card">
         <div class="card-title">
-          <span>Category Budgets</span>
+          <span>Budget</span>
           <span style="font-size: 0.72rem; color: var(--text-muted);" id="budgetCount">0 Limits</span>
         </div>
         <div class="entry-grid" id="budgetList"></div>
@@ -810,7 +834,7 @@
       <!-- Savings Goals Layer: saved goals + plus-icon add tile -->
       <section class="card">
         <div class="card-title">
-          <span>Savings Goals</span>
+          <span>Savings Goal</span>
           <span style="font-size: 0.72rem; color: var(--text-muted);" id="goalCount">0 Goals</span>
         </div>
         <div class="entry-grid" id="goalList"></div>
@@ -910,11 +934,15 @@
         </div>
 
         <div class="form-full">
-          <label style="font-size: 0.68rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Initial Balance / Current Value (₱):</label>
+          <label style="font-size: 0.68rem; color: var(--text-muted); display: block; margin-bottom: 2px;" id="initialBalanceLabel">Initial Balance / Current Value:</label>
           <input type="number" id="initialBalanceInput" placeholder="0.00" step="0.01" style="width:100%;" />
+          <!-- Shown only when editing an account that has transactions against
+               it, so it's clear this field is the opening amount and not the
+               running total displayed on the tile. -->
+          <div id="accountBalanceHint" style="display:none; font-size: 0.64rem; color: var(--text-muted); margin-top: 5px; line-height: 1.4;"></div>
         </div>
 
-        <button class="btn-submit form-full" onclick="confirmAddAccountFromTemplate()">+ Save Account</button>
+        <button class="btn-submit form-full" id="accountModalSaveBtn" onclick="saveAccountEntry()">+ Save Account</button>
         <button class="btn-secondary form-full" onclick="closeAccountAmountModal()">Cancel</button>
       </div>
     </div>
@@ -1478,22 +1506,39 @@
     let chartTimeframe = 'monthly';
     let myChart = null;
 
-    /* Global Privacy Mask Helper Function */
+    /* Plain currency formatting — never masked. Used for the transaction
+       history, which stays readable regardless of the privacy toggle. */
+    function formatAmount(amountVal) {
+      return `${currentCurrency}${Number(amountVal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    /* Global Privacy Mask Helper Function (balances, budgets, goals, loans) */
     function maskAmount(amountVal) {
       if (isPrivacyMode) return '••••••';
-      return `${currentCurrency}${amountVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      return formatAmount(amountVal);
+    }
+
+    /* Simple eye / eye-with-slash glyphs, the same pair used to reveal and
+       hide a password field. */
+    const EYE_OPEN_PATH = 'M12 5C6.5 5 2.2 8.6 1 12c1.2 3.4 5.5 7 11 7s9.8-3.6 11-7c-1.2-3.4-5.5-7-11-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z';
+    const EYE_OFF_PATH = 'M12 7a5 5 0 014.9 5.9l2.9 2.9c1.6-1.1 2.8-2.5 3.2-3.8-1.2-3.4-5.5-7-11-7-1.3 0-2.6.2-3.8.6l2.1 2.1c.5-.1 1.1-.2 1.7-.2zM3.3 3.3a1 1 0 000 1.4l2.2 2.2C3.5 8.1 1.9 10 1 12c1.2 3.4 5.5 7 11 7 1.8 0 3.5-.4 5-1l2.4 2.4a1 1 0 001.4-1.4L4.7 3.3a1 1 0 00-1.4 0zM12 17a5 5 0 01-4.4-7.4l1.6 1.6a3 3 0 003.7 3.7l1.6 1.6c-.7.3-1.6.5-2.5.5z';
+
+    function updateEyeIcon() {
+      const icon = document.getElementById('globalEyeIcon');
+      if (!icon) return;
+      icon.innerHTML = `<path d="${isPrivacyMode ? EYE_OFF_PATH : EYE_OPEN_PATH}"></path>`;
     }
 
     function togglePrivacyMode() {
       isPrivacyMode = !isPrivacyMode;
       localStorage.setItem('moneytor_privacy', isPrivacyMode);
-      document.getElementById('globalEyeBtn').innerText = isPrivacyMode ? '🙈' : '👁️';
+      updateEyeIcon();
       renderApp();
     }
 
     function initApp() {
       applyTheme(currentTheme);
-      document.getElementById('globalEyeBtn').innerText = isPrivacyMode ? '🙈' : '👁️';
+      updateEyeIcon();
       syncSettingsInputs();
       renderApp();
 
@@ -1598,39 +1643,112 @@
       });
     }
 
+    /* The balance modal is dual-mode: it creates an account from a directory
+       template, and it also edits an account that already exists.
+       editingAccountId === null means we're adding. */
+    let editingAccountId = null;
+
     function promptAddAccountAmount(name, category) {
       const icon = getAccountIconDataUri(name, category);
+      editingAccountId = null;
       selectedTemplateForAdd = { name, category, icon };
+
+      document.getElementById('accountAmountModalTitle').innerText = 'Set Initial Balance';
+      document.getElementById('accountModalSaveBtn').innerText = '+ Save Account';
+      document.getElementById('initialBalanceLabel').innerText = 'Initial Balance / Current Value:';
       document.getElementById('selectedAccountName').innerText = name;
       document.getElementById('selectedAccountCategory').innerText = category.toUpperCase();
       document.getElementById('selectedAccountIcon').src = icon;
       document.getElementById('customAccountLabelInput').value = name;
       document.getElementById('initialBalanceInput').value = '';
+      document.getElementById('accountBalanceHint').style.display = 'none';
 
       closeCategorizedAccountsModal();
       document.getElementById('accountAmountModal').classList.add('active');
     }
 
+    /* Edit an account already on the ledger — label, opening amount, or both. */
+    function openEditAccountModal(accId) {
+      const acc = userAccounts.find(a => a.id === accId);
+      if (!acc) return;
+
+      editingAccountId = acc.id;
+      selectedTemplateForAdd = null;
+
+      const icon = getAccountIconDataUri(acc.name, acc.category);
+      document.getElementById('accountAmountModalTitle').innerText = 'Edit Account';
+      document.getElementById('accountModalSaveBtn').innerText = 'Save Changes';
+      document.getElementById('initialBalanceLabel').innerText = 'Opening Balance / Current Value:';
+      document.getElementById('selectedAccountName').innerText = acc.name;
+      document.getElementById('selectedAccountCategory').innerText = String(acc.category || '').toUpperCase();
+      document.getElementById('selectedAccountIcon').src = icon;
+      document.getElementById('customAccountLabelInput').value = acc.name;
+      document.getElementById('initialBalanceInput').value = acc.balance || 0;
+
+      /* If transactions have moved this account, say so, so the number in the
+         field isn't mistaken for the balance shown on the tile. */
+      const opening = acc.balance || 0;
+      const running = getAccountBalances()[acc.name];
+      const hint = document.getElementById('accountBalanceHint');
+      if (running !== undefined && Math.abs(running - opening) > 0.005) {
+        hint.innerText = `This is the opening amount. With transactions applied, this account currently shows ${maskAmount(running)}.`;
+        hint.style.display = 'block';
+      } else {
+        hint.style.display = 'none';
+      }
+
+      document.getElementById('accountAmountModal').classList.add('active');
+    }
+
     function closeAccountAmountModal() {
       selectedTemplateForAdd = null;
+      editingAccountId = null;
       document.getElementById('accountAmountModal').classList.remove('active');
     }
 
-    function confirmAddAccountFromTemplate() {
-      if (!selectedTemplateForAdd) return;
+    function saveAccountEntry() {
+      const rawLabel = document.getElementById('customAccountLabelInput').value.trim();
+      const amountField = document.getElementById('initialBalanceInput').value;
+      const amount = parseFloat(amountField);
 
-      const label = document.getElementById('customAccountLabelInput').value.trim() || selectedTemplateForAdd.name;
-      const initialBal = parseFloat(document.getElementById('initialBalanceInput').value) || 0;
+      if (editingAccountId) {
+        const acc = userAccounts.find(a => a.id === editingAccountId);
+        if (!acc) return;
 
-      const newAcc = {
-        id: Date.now(),
-        name: label,
-        category: selectedTemplateForAdd.category,
-        icon: selectedTemplateForAdd.icon,
-        balance: initialBal
-      };
+        const newName = rawLabel || acc.name;
+        if (userAccounts.some(a => a.id !== acc.id && a.name === newName)) {
+          alert('Another account already uses that name. Please pick a different label.');
+          return;
+        }
+        if (amountField !== '' && isNaN(amount)) {
+          alert('Please enter a valid amount.');
+          return;
+        }
 
-      userAccounts.push(newAcc);
+        /* Transactions reference accounts by name, so a rename has to be
+           carried across the ledger or those transactions would be orphaned. */
+        if (newName !== acc.name) {
+          const oldName = acc.name;
+          transactions.forEach(t => {
+            if (t.account === oldName) t.account = newName;
+            if (t.toAccount === oldName) t.toAccount = newName;
+          });
+          acc.name = newName;
+        }
+
+        acc.balance = amountField === '' ? 0 : amount;
+      } else {
+        if (!selectedTemplateForAdd) return;
+
+        userAccounts.push({
+          id: Date.now(),
+          name: rawLabel || selectedTemplateForAdd.name,
+          category: selectedTemplateForAdd.category,
+          icon: selectedTemplateForAdd.icon,
+          balance: isNaN(amount) ? 0 : amount
+        });
+      }
+
       autoSave();
       renderApp();
       closeAccountAmountModal();
@@ -2145,6 +2263,29 @@
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
+    /* Opening balances with every transaction applied, keyed by account name.
+       Shared by the renderer and the Edit Account modal. */
+    function getAccountBalances() {
+      const balances = {};
+      userAccounts.forEach(acc => {
+        balances[acc.name] = acc.balance || 0;
+      });
+
+      transactions.forEach(tx => {
+        const accName = tx.account || (userAccounts[0] ? userAccounts[0].name : 'Cash');
+        if (tx.type === 'income') {
+          balances[accName] = (balances[accName] || 0) + tx.amount;
+        } else if (tx.type === 'expense' || tx.type === 'investment') {
+          balances[accName] = (balances[accName] || 0) - tx.amount;
+        } else if (tx.type === 'transfer' && tx.toAccount) {
+          balances[accName] = (balances[accName] || 0) - tx.amount;
+          balances[tx.toAccount] = (balances[tx.toAccount] || 0) + tx.amount;
+        }
+      });
+
+      return balances;
+    }
+
     /* Central Render Function */
     function renderApp() {
       // 1. Calculate Account Balances
@@ -2152,23 +2293,11 @@
       let totalInc = 0;
       let totalExp = 0;
 
-      const accountBalances = {};
-      userAccounts.forEach(acc => {
-        accountBalances[acc.name] = acc.balance || 0;
-      });
+      const accountBalances = getAccountBalances();
 
       transactions.forEach(tx => {
-        const accName = tx.account || (userAccounts[0] ? userAccounts[0].name : 'Cash');
-        if (tx.type === 'income') {
-          totalInc += tx.amount;
-          accountBalances[accName] = (accountBalances[accName] || 0) + tx.amount;
-        } else if (tx.type === 'expense' || tx.type === 'investment') {
-          totalExp += tx.amount;
-          accountBalances[accName] = (accountBalances[accName] || 0) - tx.amount;
-        } else if (tx.type === 'transfer' && tx.toAccount) {
-          accountBalances[accName] = (accountBalances[accName] || 0) - tx.amount;
-          accountBalances[tx.toAccount] = (accountBalances[tx.toAccount] || 0) + tx.amount;
-        }
+        if (tx.type === 'income') totalInc += tx.amount;
+        else if (tx.type === 'expense' || tx.type === 'investment') totalExp += tx.amount;
       });
 
       Object.values(accountBalances).forEach(val => netWorth += val);
@@ -2209,7 +2338,6 @@
 
       // 3. Render Active Accounts Layer (entry tiles + add tile, side by side)
       const walletsContainer = document.getElementById('walletsList');
-      document.getElementById('activeAccountCount').innerText = `${userAccounts.length} Accounts`;
 
       walletsContainer.innerHTML = userAccounts.map(acc => `
         <div class="entry-tile">
@@ -2218,7 +2346,10 @@
               <img src="${getAccountIconDataUri(acc.name, acc.category)}" class="wallet-icon-img" alt="" />
               <span class="entry-tile-title">${acc.name}</span>
             </div>
-            ${userAccounts.length > 1 ? `<button class="btn-icon-sm danger" title="Delete account" onclick="deleteUserAccount(${acc.id})">✕</button>` : ''}
+            <div class="btn-group-sm">
+              <button class="btn-icon-sm" title="Edit account" onclick="openEditAccountModal(${acc.id})">✎</button>
+              ${userAccounts.length > 1 ? `<button class="btn-icon-sm danger" title="Delete account" onclick="deleteUserAccount(${acc.id})">✕</button>` : ''}
+            </div>
           </div>
           <span class="wallet-cat-tag">${acc.category}</span>
           <span class="entry-tile-value">${maskAmount(accountBalances[acc.name] || 0)}</span>
@@ -2372,7 +2503,7 @@
               <span class="tx-meta">${walletMeta} • ${tx.category} • ${tx.date || 'No Date'}</span>
             </div>
             <div style="display:flex; align-items:center;">
-              <span class="tx-amount ${tx.type}">${typeSymbol}${maskAmount(tx.amount)}</span>
+              <span class="tx-amount ${tx.type}">${typeSymbol}${formatAmount(tx.amount)}</span>
               <button class="btn-icon" style="margin-left:8px;" title="Edit transaction" onclick="openTxModal(${tx.id})">✎</button>
               <button class="btn-icon" title="Delete transaction" onclick="deleteTransaction(${tx.id})">✕</button>
             </div>
