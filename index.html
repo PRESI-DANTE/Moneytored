@@ -554,22 +554,23 @@
 
     .nav-add-btn svg { width: 24px; height: 24px; fill: #000000; }
 
+    /* Icon-only theme switch: a bare sun/moon glyph, no pill and no label. */
     .theme-toggle-btn {
-      background: var(--bg-input);
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-      padding: 9px 16px;
-      border-radius: 12px;
-      font-size: 0.82rem;
-      font-weight: 700;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
       width: fit-content;
       margin: 0 auto;
+      border-radius: 8px;
     }
+
+    .theme-toggle-btn:hover { color: var(--text-main); }
+    .theme-toggle-btn svg { width: 18px; height: 18px; fill: currentColor; display: block; }
 
     .empty-text { text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 8px 0; }
     .btn-sm { background: var(--bg-card-hover); border: 1px solid var(--border-color); color: var(--text-main); padding: 4px 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.72rem; }
@@ -709,6 +710,75 @@
 
     .add-tile-label { font-size: 0.72rem; font-weight: 700; color: var(--text-main); text-align: center; }
 
+    /* "Show More" control at the foot of the transaction history */
+    .btn-show-more {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-show-more:hover { background: var(--bg-card-hover); border-color: var(--accent-primary); }
+    .show-more-count { color: var(--text-muted); font-weight: 600; font-size: 0.7rem; }
+
+    /* Section headings inside the account directory (used by the Loans tab) */
+    .directory-section-label {
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 10px 2px 4px;
+    }
+
+    .directory-loan-meta {
+      display: block;
+      font-size: 0.66rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 1px;
+    }
+
+    /* Auto-calculated loan breakdown inside the loan modal */
+    .loan-preview {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .loan-preview-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .loan-preview-row.loan-preview-total {
+      color: var(--text-main);
+      font-weight: 800;
+      font-size: 0.82rem;
+      border-top: 1px solid var(--border-color);
+      padding-top: 6px;
+      margin-top: 1px;
+    }
+
+    /* Account tiles act as their own edit button, so they get the affordance. */
+    .entry-tile-clickable { cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+    .entry-tile-clickable:hover { border-color: var(--accent-primary); background: var(--bg-card-hover); }
+
     body.light-theme .add-tile-icon {
       background: var(--bg-card);
       color: var(--text-main);
@@ -778,8 +848,8 @@
         </div>
 
         <div class="filter-box">
-          <input type="text" id="searchInput" placeholder="Search title or category..." onkeyup="renderApp()" />
-          <select id="filterType" onchange="renderApp()">
+          <input type="text" id="searchInput" placeholder="Search title or category..." onkeyup="resetTxPaging(); renderApp()" />
+          <select id="filterType" onchange="resetTxPaging(); renderApp()">
             <option value="all">All Types</option>
             <option value="income">Income</option>
             <option value="expense">Expense</option>
@@ -787,7 +857,7 @@
             <option value="transfer">Transfer</option>
             <option value="recurring">Recurring</option>
           </select>
-          <select id="filterWallet" onchange="renderApp()">
+          <select id="filterWallet" onchange="resetTxPaging(); renderApp()">
             <option value="all">All Accounts</option>
           </select>
         </div>
@@ -881,7 +951,7 @@
   <div class="modal-overlay" id="accountSelectionModal">
     <div class="modal-card">
       <div class="modal-header">
-        <span>Select Account Directory</span>
+        <span></span>
         <button class="btn-icon" onclick="closeCategorizedAccountsModal()">✕</button>
       </div>
 
@@ -1017,9 +1087,8 @@
       </div>
       <div class="form-grid">
         <div class="form-full" style="padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
-          <button class="theme-toggle-btn" onclick="toggleTheme()">
-            <span id="themeIcon">☀️</span>
-            <span id="themeLabel">Light Mode</span>
+          <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+            <svg id="themeIcon" viewBox="0 0 24 24" aria-hidden="true"></svg>
           </button>
         </div>
 
@@ -1036,10 +1105,10 @@
         <div class="form-full" style="border-top: 1px solid var(--border-color); padding-top: 10px;">
           <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 8px;">Data Backup & Restore:</label>
           <div style="display: flex; flex-direction: column; gap: 8px;">
-            <button class="btn-secondary" onclick="exportDataJSON()">📥 Backup Data (JSON)</button>
+            <button class="btn-secondary" onclick="exportDataJSON()">Backup</button>
             <input type="file" id="importJsonInput" accept=".json" style="display:none" onchange="importDataJSON(event)" />
-            <button class="btn-secondary" onclick="document.getElementById('importJsonInput').click()">📤 Restore Data (JSON)</button>
-            <button class="btn-secondary" onclick="exportCSV()">📊 Export Transactions (CSV)</button>
+            <button class="btn-secondary" onclick="document.getElementById('importJsonInput').click()">Restore</button>
+            <button class="btn-secondary" onclick="exportCSV()">Export Transactions (CSV)</button>
           </div>
         </div>
 
@@ -1106,21 +1175,38 @@
       <div class="form-grid">
         <input type="text" id="editDebtTitle" placeholder="Loan Name (e.g. Credit Card)" class="form-full" />
         <div>
-          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Original Principal:</label>
-          <input type="number" id="editDebtOriginal" step="0.01" style="width: 100%;" />
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Loan Amount (Principal):</label>
+          <input type="number" id="editDebtOriginal" step="0.01" style="width: 100%;" oninput="updateLoanPreview()" />
         </div>
         <div>
-          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Current Balance:</label>
-          <input type="number" id="editDebtCurrent" step="0.01" style="width: 100%;" />
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Interest Rate (%):</label>
+          <input type="number" id="editDebtApr" step="0.01" style="width: 100%;" oninput="updateLoanPreview()" />
         </div>
         <div>
-          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">APR Rate (%):</label>
-          <input type="number" id="editDebtApr" step="0.1" style="width: 100%;" />
+          <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Already Paid:</label>
+          <input type="number" id="editDebtPaid" step="0.01" style="width: 100%;" oninput="updateLoanPreview()" />
         </div>
         <div>
           <label style="font-size: 0.65rem; color: var(--text-muted); display: block;">Monthly Payment:</label>
           <input type="number" id="editDebtMonthly" step="0.01" style="width: 100%;" />
         </div>
+
+        <!-- Auto-calculated from the amount + interest rate as they're typed -->
+        <div class="loan-preview form-full" id="loanPreview">
+          <div class="loan-preview-row">
+            <span>Interest</span>
+            <span id="loanPreviewInterest">—</span>
+          </div>
+          <div class="loan-preview-row loan-preview-total">
+            <span>Total Payable</span>
+            <span id="loanPreviewTotal">—</span>
+          </div>
+          <div class="loan-preview-row">
+            <span>Remaining</span>
+            <span id="loanPreviewRemaining">—</span>
+          </div>
+        </div>
+
         <button class="btn-submit form-full" id="debtModalSaveBtn" onclick="saveDebtEdit()">Save Loan Entry</button>
         <button class="btn-secondary form-full" onclick="closeEditDebtModal()">Cancel</button>
       </div>
@@ -1269,13 +1355,12 @@
     let debts = JSON.parse(localStorage.getItem('moneytor_debts')) || [];
     let budgets = JSON.parse(localStorage.getItem('moneytor_budgets')) || {};
 
-    /* Default User Active Accounts (Initial Seed) — icons are no longer stored
-       here; they're generated fresh at render time by getAccountIconDataUri()
-       below, from the account's name + category. */
-    let userAccounts = JSON.parse(localStorage.getItem('moneytor_user_accounts')) || [
-      { id: 1, name: 'Cash on Hand', category: 'Wallet', balance: 1000 },
-      { id: 2, name: 'GCash', category: 'Wallet', balance: 2500 }
-    ];
+    /* User Active Accounts. Deliberately EMPTY on first use: the app used to
+       seed 'Cash on Hand' and 'GCash', which looked like entries had been
+       added on the user's behalf. A fresh install now shows only the
+       Add Account tile. Icons are never stored here; they're generated at
+       render time by getAccountIconDataUri() from name + category. */
+    let userAccounts = JSON.parse(localStorage.getItem('moneytor_user_accounts')) || [];
 
     /* ==========================================================================
        ACCOUNT ICON ENGINE
@@ -1297,6 +1382,25 @@
        to a deterministic hash-based color, so every entry always gets a
        distinct, consistent badge. */
     const BRAND_COLORS = {
+      /* Filling out the rest of the directory so every entry gets a stable,
+         deliberate colour instead of a hash-derived one. Generic categories
+         (assets, receivables, funds) take a considered tone rather than a
+         corporate brand colour, since they aren't companies. */
+      'cash on hand': '#10B981',
+      'starpay': '#F5A623', 'bayad app': '#0C4DA2', 'toktok wallet': '#F2C200',
+      'dragonpay': '#E4572E',
+      'diskartech (rcbc)': '#0B5FA5', 'ownbank': '#1C7C54',
+      'aub credit card': '#00539B',
+      'ginvest (atram / sbfm)': '#00C16E', 'mutual funds account': '#7C6CE4',
+      'retail treasury bonds (rtb)': '#3F6F9C', 'real estate investment property': '#8B6D3F',
+      'crypto holdings (coins / pdax)': '#F7931A',
+      'real estate property / land': '#8B6D3F', 'automobile / vehicle value': '#4B6584',
+      'jewelry & gold assets': '#C9A227', 'business equity / shares': '#5B6ABF',
+      'machinery & equipment': '#6B7280', 'collectibles & art assets': '#B5548A',
+      'personal money ious (friends/family)': '#E08A3C', 'unpaid client invoices': '#C2703D',
+      'salary / bonus receivable': '#2E9E7B', 'tax refund receivable': '#3F8FB0',
+      'rental income receivable': '#9A7B4F', 'business accounts receivable': '#4F7CAC',
+
       'gcash': '#0072CE', 'gcash jr': '#0072CE',
       'maya': '#00C16E', 'maya savings': '#00C16E', 'maya investment funds': '#00C16E',
       'grabpay': '#00B14F',
@@ -1356,12 +1460,16 @@
     const ICON_STOPWORDS = new Set(['on', 'of', 'the', 'and', 'for', 'in', 'a', 'an']);
 
     function getInitials(name) {
-      const clean = String(name).replace(/\([^)]*\)/g, '').trim();
-      const words = clean.split(/\s+/).filter(w => w && /[A-Za-z0-9]/.test(w) && !ICON_STOPWORDS.has(w.toLowerCase()));
+      /* Trim parentheticals and anything after a slash, so
+         'Pag-IBIG Housing / Calamity Loan' reads from 'Pag-IBIG Housing'
+         rather than picking up the alternative name. */
+      const clean = String(name).replace(/\([^)]*\)/g, ' ').split('/')[0].trim();
+      const words = clean.split(/[\s-]+/).filter(w => w && /[A-Za-z0-9]/.test(w) && !ICON_STOPWORDS.has(w.toLowerCase()));
       if (words.length === 0) return '??';
       const first = words[0];
-      if (words.length === 1) return first.substring(0, 2).toUpperCase();
+      /* An existing acronym (BDO, BPI, SSS, PNB) is already the best badge. */
       if (/^[A-Z0-9]{2,6}$/.test(first)) return first.substring(0, 2).toUpperCase();
+      if (words.length === 1) return first.substring(0, 2).toUpperCase();
       return (first[0] + words[1][0]).toUpperCase();
     }
 
@@ -1537,6 +1645,7 @@
     }
 
     function initApp() {
+      normalizeDebts();
       applyTheme(currentTheme);
       updateEyeIcon();
       syncSettingsInputs();
@@ -1550,7 +1659,28 @@
       });
     }
 
+    /* ==========================================================================
+       TRANSACTION HISTORY PAGING
+       The history shows one page of the most recent transactions; "Show More"
+       adds another page. Leaving the screen (or changing a filter) collapses
+       it back to the latest page.
+       ========================================================================== */
+    const TX_PAGE_SIZE = 10;
+    let txVisibleCount = TX_PAGE_SIZE;
+
+    function showMoreTransactions() {
+      txVisibleCount += TX_PAGE_SIZE;
+      renderApp();
+    }
+
+    function resetTxPaging() {
+      txVisibleCount = TX_PAGE_SIZE;
+    }
+
     function switchView(viewName) {
+      /* Leaving the screen collapses the history back to the latest page. */
+      resetTxPaging();
+
       document.getElementById('viewHome').classList.toggle('active', viewName === 'home');
       document.getElementById('viewAnalytics').classList.toggle('active', viewName === 'analytics');
       document.getElementById('navBtnHome').classList.toggle('active', viewName === 'home');
@@ -1617,30 +1747,73 @@
       const container = document.getElementById('accountDirectoryList');
       container.innerHTML = '';
 
+      const isLoanCategory = activeDirectoryCategory === 'Loans';
+
       const filtered = masterAccountDirectory.filter(item => {
         const matchesCat = item.category === activeDirectoryCategory;
         const matchesQuery = item.name.toLowerCase().includes(query) || item.category.toLowerCase().includes(query);
         return matchesCat && matchesQuery;
       });
 
+      /* Loans the user already has are listed first, with their own
+         pay / edit / delete controls. */
+      if (isLoanCategory && !query) renderExistingLoansInDirectory(container);
+
       if (filtered.length === 0) {
-        container.innerHTML = `<div class="empty-text">No accounts matching "${query}" in ${activeDirectoryCategory}</div>`;
+        container.insertAdjacentHTML('beforeend', `<div class="empty-text">No accounts matching "${query}" in ${activeDirectoryCategory}</div>`);
         return;
       }
 
       filtered.forEach(tmpl => {
-        const isAdded = userAccounts.some(u => u.name.toLowerCase() === tmpl.name.toLowerCase());
         const iconUri = getAccountIconDataUri(tmpl.name, tmpl.category);
+        /* Loans open the loan form (they live in Insights > Loans); every
+           other category opens the account balance form. */
+        const action = isLoanCategory
+          ? `openEditDebtModal(null, '${escAttr(tmpl.name)}')`
+          : `promptAddAccountAmount('${escAttr(tmpl.name)}', '${escAttr(tmpl.category)}')`;
         container.insertAdjacentHTML('beforeend', `
-          <div class="template-item" onclick="promptAddAccountAmount('${escAttr(tmpl.name)}', '${escAttr(tmpl.category)}')">
+          <div class="template-item" onclick="${action}">
             <div class="template-item-left">
               <img src="${iconUri}" class="wallet-icon-img" alt="" />
               <span class="template-title">${tmpl.name}</span>
             </div>
-            <button class="btn-sm" style="background:var(--accent-primary); color:#000;">${isAdded ? '+ Add Another' : '+ Select'}</button>
           </div>
         `);
       });
+    }
+
+    /* The Loans tab manages loan entries in place: each existing loan can be
+       paid, edited or deleted without leaving the directory. */
+    function renderExistingLoansInDirectory(container) {
+      if (debts.length === 0) return;
+
+      container.insertAdjacentHTML('beforeend', `
+        <div class="directory-section-label">Your Loans</div>
+      `);
+
+      debts.forEach(debt => {
+        const iconUri = getAccountIconDataUri(debt.title, 'Loans');
+        container.insertAdjacentHTML('beforeend', `
+          <div class="template-item">
+            <div class="template-item-left">
+              <img src="${iconUri}" class="wallet-icon-img" alt="" />
+              <div style="min-width:0;">
+                <span class="template-title">${debt.title}</span>
+                <span class="directory-loan-meta">${maskAmount(loanRemaining(debt))} of ${maskAmount(loanTotalPayable(debt))} left</span>
+              </div>
+            </div>
+            <div class="btn-group-sm">
+              <button class="btn-sm" title="Pay bill" onclick="openPayDebtModal(${debt.id})">Pay Bill</button>
+              <button class="btn-icon-sm" title="Edit loan" onclick="openEditDebtModal(${debt.id})">✎</button>
+              <button class="btn-icon-sm danger" title="Remove loan" onclick="deleteDebt(${debt.id})">✕</button>
+            </div>
+          </div>
+        `);
+      });
+
+      container.insertAdjacentHTML('beforeend', `
+        <div class="directory-section-label">Add a Loan</div>
+      `);
     }
 
     /* The balance modal is dual-mode: it creates an account from a directory
@@ -1755,10 +1928,6 @@
     }
 
     function deleteUserAccount(accId) {
-      if (userAccounts.length <= 1) {
-        alert('You must maintain at least one active account.');
-        return;
-      }
       if (confirm('Delete this account from your active ledger?')) {
         userAccounts = userAccounts.filter(a => a.id !== accId);
         autoSave();
@@ -1768,6 +1937,12 @@
 
     /* Modal Opens */
     function openAddTxModal() {
+      /* Nothing to record against until at least one account exists. */
+      if (userAccounts.length === 0) {
+        alert('Add an account first, then you can record transactions against it.');
+        openCategorizedAccountsModal();
+        return;
+      }
       document.getElementById('txDateInput').value = new Date().toISOString().slice(0, 10);
       handleTypeChange('add');
       document.getElementById('addTxModal').classList.add('active');
@@ -1803,6 +1978,7 @@
       const rawDate = document.getElementById('txDateInput').value || new Date().toISOString().slice(0, 10);
       const isRecurring = document.getElementById('recurringInput').checked;
 
+      if (userAccounts.length === 0) { alert('Add an account first.'); return; }
       if (!desc || isNaN(amount) || amount <= 0) { alert('Please enter a valid title and amount.'); return; }
       if (type === 'transfer' && account === toAccount) { alert('Origin and destination accounts must be different.'); return; }
 
@@ -1973,18 +2149,72 @@
        ========================================================================== */
     let editingDebtId = null;
 
-    function openEditDebtModal(debtId) {
+    /* ----------------------------------------------------------------------
+       Loan maths. A loan is stored as:
+         original  - the principal borrowed
+         apr       - the interest rate applied to that principal
+         paid      - how much has been paid off so far
+       Total payable (principal + interest) and the remaining balance are
+       always derived from those three, so they can never drift out of sync.
+       ---------------------------------------------------------------------- */
+    function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+
+    function loanInterest(debt) {
+      return round2((debt.original || 0) * ((debt.apr || 0) / 100));
+    }
+
+    function loanTotalPayable(debt) {
+      return round2((debt.original || 0) + loanInterest(debt));
+    }
+
+    function loanRemaining(debt) {
+      return round2(Math.max(0, loanTotalPayable(debt) - (debt.paid || 0)));
+    }
+
+    /* Loans saved by older versions stored a free-floating `current` balance
+       and no `paid` figure. Convert them once, on load, so both models agree. */
+    function normalizeDebts() {
+      let changed = false;
+      debts.forEach(d => {
+        if (typeof d.paid !== 'number') {
+          const total = loanTotalPayable(d);
+          const current = typeof d.current === 'number' ? d.current : total;
+          d.paid = round2(Math.max(0, total - current));
+          changed = true;
+        }
+        d.current = loanRemaining(d);
+      });
+      if (changed) autoSave();
+    }
+
+    /* Live breakdown under the loan form, recalculated as the user types. */
+    function updateLoanPreview() {
+      const original = parseFloat(document.getElementById('editDebtOriginal').value) || 0;
+      const apr = parseFloat(document.getElementById('editDebtApr').value) || 0;
+      const paid = parseFloat(document.getElementById('editDebtPaid').value) || 0;
+      const draft = { original, apr, paid };
+
+      document.getElementById('loanPreviewInterest').innerText = formatAmount(loanInterest(draft));
+      document.getElementById('loanPreviewTotal').innerText = formatAmount(loanTotalPayable(draft));
+      document.getElementById('loanPreviewRemaining').innerText = formatAmount(loanRemaining(draft));
+    }
+
+    /* prefillName lets the Loans tab of the account directory open this modal
+       with the lender already filled in. */
+    function openEditDebtModal(debtId, prefillName) {
       const debt = debtId ? debts.find(d => d.id === debtId) : null;
       editingDebtId = debt ? debt.id : null;
 
       document.getElementById('debtModalTitle').innerText = debt ? 'Edit Loan' : 'Add Loan';
       document.getElementById('debtModalSaveBtn').innerText = debt ? 'Save Changes' : 'Save Loan Entry';
-      document.getElementById('editDebtTitle').value = debt ? debt.title : '';
+      document.getElementById('editDebtTitle').value = debt ? debt.title : (prefillName || '');
       document.getElementById('editDebtOriginal').value = debt ? debt.original : '';
-      document.getElementById('editDebtCurrent').value = debt ? debt.current : '';
       document.getElementById('editDebtApr').value = debt ? (debt.apr || '') : '';
+      document.getElementById('editDebtPaid').value = debt ? (debt.paid || 0) : 0;
       document.getElementById('editDebtMonthly').value = debt ? (debt.monthly || '') : '';
 
+      updateLoanPreview();
+      closeCategorizedAccountsModal();
       document.getElementById('editDebtModal').classList.add('active');
     }
 
@@ -1996,21 +2226,22 @@
     function saveDebtEdit() {
       const title = document.getElementById('editDebtTitle').value.trim();
       const original = parseFloat(document.getElementById('editDebtOriginal').value);
-      const current = parseFloat(document.getElementById('editDebtCurrent').value);
       const apr = parseFloat(document.getElementById('editDebtApr').value);
+      const paid = parseFloat(document.getElementById('editDebtPaid').value);
       const monthly = parseFloat(document.getElementById('editDebtMonthly').value);
 
       if (!title) { alert('Please enter a loan name.'); return; }
-      if (isNaN(original) || original <= 0) { alert('Please enter a valid original principal.'); return; }
-      if (isNaN(current) || current < 0) { alert('Please enter a valid current balance.'); return; }
+      if (isNaN(original) || original <= 0) { alert('Please enter a valid loan amount.'); return; }
+      if (apr < 0) { alert('Interest rate cannot be negative.'); return; }
 
       const payload = {
         title,
         original,
-        current,
-        apr: isNaN(apr) ? 0 : apr,
+        apr: isNaN(apr) || apr < 0 ? 0 : apr,
+        paid: isNaN(paid) || paid < 0 ? 0 : paid,
         monthly: isNaN(monthly) ? 0 : monthly
       };
+      payload.current = loanRemaining(payload);
 
       if (editingDebtId) {
         const debt = debts.find(d => d.id === editingDebtId);
@@ -2029,9 +2260,12 @@
       debts = debts.filter(d => d.id !== id);
       autoSave();
       renderApp();
+      if (document.getElementById('accountSelectionModal').classList.contains('active')) {
+        renderAccountDirectoryTemplates();
+      }
     }
 
-    /* Loan payments */
+    /* Bill payments, taken off the loan's total payable */
     let payingDebtId = null;
 
     function openPayDebtModal(debtId) {
@@ -2039,9 +2273,10 @@
       if (!debt) return;
       payingDebtId = debt.id;
 
-      document.getElementById('payDebtModalTitle').innerText = `Payment — ${debt.title}`;
-      document.getElementById('payDebtInfo').innerText = maskAmount(debt.current);
-      document.getElementById('payDebtAmountInput').value = '';
+      document.getElementById('payDebtModalTitle').innerText = `Pay Bill — ${debt.title}`;
+      document.getElementById('payDebtInfo').innerText =
+        `${maskAmount(loanRemaining(debt))} remaining of ${maskAmount(loanTotalPayable(debt))}`;
+      document.getElementById('payDebtAmountInput').value = debt.monthly || '';
       document.getElementById('payDebtModal').classList.add('active');
     }
 
@@ -2055,11 +2290,19 @@
       if (isNaN(amount) || amount <= 0) { alert('Please enter a valid payment amount.'); return; }
 
       const debt = debts.find(d => d.id === payingDebtId);
-      if (debt) debt.current = Math.max(0, debt.current - amount);
+      if (debt) {
+        /* The bill comes off the total payable, never past zero. */
+        const total = loanTotalPayable(debt);
+        debt.paid = round2(Math.min(total, (debt.paid || 0) + amount));
+        debt.current = loanRemaining(debt);
+      }
 
       autoSave();
       renderApp();
       closePayDebtModal();
+      if (document.getElementById('accountSelectionModal').classList.contains('active')) {
+        renderAccountDirectoryTemplates();
+      }
     }
 
     /* ==========================================================================
@@ -2226,16 +2469,20 @@
 
     function applyTheme(theme) {
       currentTheme = theme;
-      if (currentTheme === 'light') {
-        document.body.classList.add('light-theme');
-        document.getElementById('themeIcon').innerText = '🌙';
-        document.getElementById('themeLabel').innerText = 'Dark Mode';
-      } else {
-        document.body.classList.remove('light-theme');
-        document.getElementById('themeIcon').innerText = '☀️';
-        document.getElementById('themeLabel').innerText = 'Light Mode';
-      }
+      document.body.classList.toggle('light-theme', currentTheme === 'light');
+      setThemeIcon();
       localStorage.setItem('moneytor_theme', currentTheme);
+    }
+
+    /* Bare sun / moon glyphs for the icon-only theme switch. The icon shows
+       the mode you'd switch TO, which is how a theme toggle normally reads. */
+    const SUN_PATH = 'M12 17a5 5 0 100-10 5 5 0 000 10zm0-13a1 1 0 011 1v1a1 1 0 11-2 0V5a1 1 0 011-1zm0 14a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM4 11h1a1 1 0 110 2H4a1 1 0 110-2zm15 0h1a1 1 0 110 2h-1a1 1 0 110-2zM6.3 4.9l.7.7a1 1 0 01-1.4 1.4l-.7-.7a1 1 0 011.4-1.4zm11 11l.7.7a1 1 0 01-1.4 1.4l-.7-.7a1 1 0 011.4-1.4zm.7-11a1 1 0 010 1.4l-.7.7a1 1 0 01-1.4-1.4l.7-.7a1 1 0 011.4 0zm-11 11a1 1 0 010 1.4l-.7.7a1 1 0 01-1.4-1.4l.7-.7a1 1 0 011.4 0z';
+    const MOON_PATH = 'M12.3 3a1 1 0 00-1.1 1.4A7 7 0 0119.6 13a1 1 0 001.4 1.2A8 8 0 1112.3 3z';
+
+    function setThemeIcon() {
+      const icon = document.getElementById('themeIcon');
+      if (!icon) return;
+      icon.innerHTML = `<path d="${currentTheme === 'dark' ? SUN_PATH : MOON_PATH}"></path>`;
     }
 
     function toggleTheme() {
@@ -2340,15 +2587,14 @@
       const walletsContainer = document.getElementById('walletsList');
 
       walletsContainer.innerHTML = userAccounts.map(acc => `
-        <div class="entry-tile">
+        <div class="entry-tile entry-tile-clickable" title="Edit account" onclick="openEditAccountModal(${acc.id})">
           <div class="entry-tile-head">
             <div class="wallet-brand-meta" style="min-width:0;">
               <img src="${getAccountIconDataUri(acc.name, acc.category)}" class="wallet-icon-img" alt="" />
               <span class="entry-tile-title">${acc.name}</span>
             </div>
             <div class="btn-group-sm">
-              <button class="btn-icon-sm" title="Edit account" onclick="openEditAccountModal(${acc.id})">✎</button>
-              ${userAccounts.length > 1 ? `<button class="btn-icon-sm danger" title="Delete account" onclick="deleteUserAccount(${acc.id})">✕</button>` : ''}
+              <button class="btn-icon-sm danger" title="Delete account" onclick="event.stopPropagation(); deleteUserAccount(${acc.id})">✕</button>
             </div>
           </div>
           <span class="wallet-cat-tag">${acc.category}</span>
@@ -2401,9 +2647,8 @@
       }).join('');
 
       budgetContainer.insertAdjacentHTML('beforeend', `
-        <div class="add-tile" onclick="openBudgetModal()" title="Set Budget">
+        <div class="add-tile" onclick="openBudgetModal()" title="Set Budget" aria-label="Set Budget">
           <span class="add-tile-icon">+</span>
-          <span class="add-tile-label">Set Budget</span>
         </div>
       `);
       document.getElementById('budgetCount').innerText = `${budgetKeys.length} ${budgetKeys.length === 1 ? 'Limit' : 'Limits'}`;
@@ -2443,11 +2688,15 @@
       // 5b. Render Loans Layer (add tile is a plain plus icon)
       const debtListContainer = document.getElementById('debtList');
       debtListContainer.innerHTML = debts.map(debt => {
-        const paidOff = debt.original > 0
-          ? Math.min(100, Math.max(0, Math.round(((debt.original - debt.current) / debt.original) * 100)))
+        /* Progress is measured against the TOTAL PAYABLE (principal +
+           interest), which is what the bill payments actually reduce. */
+        const total = loanTotalPayable(debt);
+        const remaining = loanRemaining(debt);
+        const paidOff = total > 0
+          ? Math.min(100, Math.max(0, Math.round(((debt.paid || 0) / total) * 100)))
           : 0;
         const metaBits = [`${paidOff}% Paid Off`];
-        if (debt.apr) metaBits.push(`${debt.apr}% APR`);
+        if (debt.apr) metaBits.push(`${debt.apr}% interest`);
         if (debt.monthly) metaBits.push(`${maskAmount(debt.monthly)}/mo`);
         return `
           <div class="entry-tile">
@@ -2458,12 +2707,12 @@
                 <button class="btn-icon-sm danger" title="Remove loan" onclick="deleteDebt(${debt.id})">✕</button>
               </div>
             </div>
-            <span class="entry-tile-sub">${maskAmount(debt.current)} / ${maskAmount(debt.original)}</span>
+            <span class="entry-tile-sub">${maskAmount(remaining)} / ${maskAmount(total)}</span>
             <div class="hero-progress-bg">
               <div class="hero-progress-fill" style="width: ${paidOff}%;"></div>
             </div>
             <span class="entry-tile-meta">${metaBits.join(' • ')}</span>
-            <button class="entry-tile-action" onclick="openPayDebtModal(${debt.id})">Log Payment</button>
+            <button class="entry-tile-action" onclick="openPayDebtModal(${debt.id})">Pay Bill</button>
           </div>
         `;
       }).join('');
@@ -2491,7 +2740,12 @@
       txListContainer.innerHTML = finalFilteredTx.length === 0 ? `<div class="empty-text">No transactions found.</div>` : '';
       document.getElementById('txCount').innerText = `${finalFilteredTx.length} items`;
 
-      finalFilteredTx.forEach(tx => {
+      /* Only the most recent page is shown; "Show More" reveals another page
+         at a time. txVisibleCount resets to a single page whenever the user
+         leaves the screen or changes the filters. */
+      const visibleTx = finalFilteredTx.slice(0, txVisibleCount);
+
+      visibleTx.forEach(tx => {
         let typeSymbol = tx.type === 'income' ? '+' : (tx.type === 'transfer' ? '↔ ' : '-');
         let walletMeta = tx.account || 'Cash';
         if (tx.type === 'transfer' && tx.toAccount) walletMeta = `${tx.account} ➔ ${tx.toAccount}`;
@@ -2510,6 +2764,15 @@
           </div>
         `);
       });
+
+      const hiddenCount = finalFilteredTx.length - visibleTx.length;
+      if (hiddenCount > 0) {
+        txListContainer.insertAdjacentHTML('beforeend', `
+          <button class="btn-show-more" onclick="showMoreTransactions()">
+            Show More <span class="show-more-count">${Math.min(TX_PAGE_SIZE, hiddenCount)} of ${hiddenCount}</span>
+          </button>
+        `);
+      }
 
       renderChart(totalInc, totalExp);
     }
