@@ -554,23 +554,120 @@
 
     .nav-add-btn svg { width: 24px; height: 24px; fill: #000000; }
 
-    /* Icon-only theme switch: a bare sun/moon glyph, no pill and no label. */
-    .theme-toggle-btn {
-      background: transparent;
+    /* ==========================================================================
+       NEUMORPHIC SUN / MOON THEME SWITCH
+       A soft pressed-in track with a raised sliding knob. The knob carries the
+       ACTIVE mode's icon in colour; the track shows the other mode in grey.
+       Dark mode is the default (no body class), so the base rules put the knob
+       on the right with the moon, and body.light-theme slides it left.
+       ========================================================================== */
+    .theme-switch {
+      position: relative;
+      width: 88px;
+      height: 44px;
+      padding: 0;
       border: none;
-      color: var(--text-muted);
-      padding: 4px;
+      background: transparent;
       cursor: pointer;
+      display: block;
+      margin: 2px auto;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .theme-switch-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: #5A6484;
+      box-shadow: inset 3px 3px 7px rgba(0, 0, 0, 0.38),
+                  inset -2px -2px 6px rgba(255, 255, 255, 0.09);
+      transition: background 0.32s ease;
+    }
+
+    body.light-theme .theme-switch-track {
+      background: #E4E8EF;
+      box-shadow: inset 3px 3px 7px rgba(163, 177, 198, 0.55),
+                  inset -3px -3px 7px rgba(255, 255, 255, 0.9);
+    }
+
+    /* Grey icons sitting in the track */
+    .theme-switch-track-icon {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      opacity: 0;
+      transition: opacity 0.28s ease;
+      pointer-events: none;
+    }
+
+    .theme-switch-track-icon svg { width: 100%; height: 100%; display: block; }
+    .track-sun { left: 12px; }
+    .track-moon { right: 12px; }
+
+    /* Dark mode (default): knob is on the right, so the grey sun shows. */
+    .track-sun { opacity: 1; }
+    body.light-theme .track-sun { opacity: 0; }
+    body.light-theme .track-moon { opacity: 1; }
+
+    /* Track icons are drawn as thin grey outlines */
+    .theme-switch-track-icon circle,
+    .theme-switch-track-icon path { fill: none; stroke: rgba(255, 255, 255, 0.55); stroke-width: 1.7; }
+    .theme-switch-track-icon line { stroke: rgba(255, 255, 255, 0.55); stroke-width: 1.7; stroke-linecap: round; }
+    body.light-theme .theme-switch-track-icon circle,
+    body.light-theme .theme-switch-track-icon path { stroke: #A9B2C3; }
+    body.light-theme .theme-switch-track-icon line { stroke: #A9B2C3; }
+
+    /* Raised sliding knob */
+    .theme-switch-knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #F5F7FB;
+      box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3),
+                  -2px -2px 6px rgba(255, 255, 255, 0.55);
       display: flex;
       align-items: center;
       justify-content: center;
-      width: fit-content;
-      margin: 0 auto;
-      border-radius: 8px;
+      transform: translateX(44px);
+      transition: transform 0.32s cubic-bezier(0.4, 0.1, 0.25, 1);
     }
 
-    .theme-toggle-btn:hover { color: var(--text-main); }
-    .theme-toggle-btn svg { width: 18px; height: 18px; fill: currentColor; display: block; }
+    body.light-theme .theme-switch-knob {
+      transform: translateX(0);
+      box-shadow: 4px 4px 9px rgba(163, 177, 198, 0.6),
+                  -3px -3px 8px rgba(255, 255, 255, 0.95);
+    }
+
+    .theme-switch:active .theme-switch-knob { box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.28); }
+
+    /* Coloured icon inside the knob: orange sun in light, blue moon in dark */
+    .knob-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 22px;
+      height: 22px;
+      margin: -11px 0 0 -11px;
+      opacity: 0;
+      transition: opacity 0.24s ease;
+    }
+
+    .knob-icon svg { width: 100%; height: 100%; display: block; }
+    .knob-icon circle, .knob-icon path { fill: none; stroke-width: 1.9; stroke-linejoin: round; }
+    .knob-icon line { stroke-width: 1.9; stroke-linecap: round; }
+
+    .knob-sun circle, .knob-sun line { stroke: #F5A623; }
+    .knob-moon path { stroke: #3E56C4; }
+    .knob-moon .moon-spark { fill: #3E56C4; stroke: #3E56C4; }
+
+    .knob-moon { opacity: 1; }
+    body.light-theme .knob-moon { opacity: 0; }
+    body.light-theme .knob-sun { opacity: 1; }
 
     .empty-text { text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 8px 0; }
     .btn-sm { background: var(--bg-card-hover); border: 1px solid var(--border-color); color: var(--text-main); padding: 4px 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.72rem; }
@@ -775,6 +872,34 @@
       margin-top: 1px;
     }
 
+    /* Press-and-hold reordering of account tiles */
+    .entry-grid.reorder-mode { touch-action: none; }
+    .entry-grid.reorder-mode .entry-tile { transition: transform 0.18s ease; }
+
+    .entry-tile.tile-reordering {
+      /* Critical: the held tile sits directly under the finger, so it must be
+         transparent to hit-testing or elementFromPoint() would only ever
+         return the tile being dragged and never the neighbour to swap with. */
+      pointer-events: none;
+      transform: scale(1.05);
+      opacity: 0.92;
+      border-color: var(--accent-primary);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+      position: relative;
+      z-index: 5;
+    }
+
+    body.light-theme .entry-tile.tile-reordering {
+      box-shadow: 0 10px 24px rgba(100, 116, 139, 0.28);
+    }
+
+    /* Long-press should not start a text selection on desktop. */
+    .entry-tile[data-acc-id] { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+
+    /* Transaction rows act as their own edit button. */
+    .tx-item-clickable { cursor: pointer; transition: background 0.2s; border-radius: 10px; }
+    .tx-item-clickable:hover { background: var(--bg-card-hover); }
+
     /* Account tiles act as their own edit button, so they get the affordance. */
     .entry-tile-clickable { cursor: pointer; transition: border-color 0.2s, background 0.2s; }
     .entry-tile-clickable:hover { border-color: var(--accent-primary); background: var(--bg-card-hover); }
@@ -840,6 +965,15 @@
         <div class="entry-grid" id="walletsList"></div>
       </section>
 
+      <!-- Category Budget Limits Layer: saved budgets + "Set Budget" tile -->
+      <section class="card">
+        <div class="card-title">
+          <span>Budget</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);" id="budgetCount">0 Limits</span>
+        </div>
+        <div class="entry-grid" id="budgetList"></div>
+      </section>
+
       <!-- Transactions History Section -->
       <section class="card">
         <div class="card-title">
@@ -890,15 +1024,6 @@
         <div class="chart-container">
           <canvas id="spendingChart"></canvas>
         </div>
-      </section>
-
-      <!-- Category Budget Limits Layer: saved budgets + "Set Budget" tile -->
-      <section class="card">
-        <div class="card-title">
-          <span>Budget</span>
-          <span style="font-size: 0.72rem; color: var(--text-muted);" id="budgetCount">0 Limits</span>
-        </div>
-        <div class="entry-grid" id="budgetList"></div>
       </section>
 
       <!-- Savings Goals Layer: saved goals + plus-icon add tile -->
@@ -1087,8 +1212,57 @@
       </div>
       <div class="form-grid">
         <div class="form-full" style="padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
-          <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
-            <svg id="themeIcon" viewBox="0 0 24 24" aria-hidden="true"></svg>
+          <!-- Neumorphic sun/moon switch: sliding knob carries the active
+               icon, the track shows the mode you'd switch to. Purely CSS
+               driven off body.light-theme, so no JS icon swapping. -->
+          <button class="theme-switch" onclick="toggleTheme()" role="switch" title="Toggle dark mode" aria-label="Toggle dark mode">
+            <span class="theme-switch-track">
+              <span class="theme-switch-track-icon track-sun">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4.2"></circle>
+                  <g class="sun-rays">
+                    <line x1="12" y1="1.6" x2="12" y2="4"></line>
+                    <line x1="12" y1="20" x2="12" y2="22.4"></line>
+                    <line x1="1.6" y1="12" x2="4" y2="12"></line>
+                    <line x1="20" y1="12" x2="22.4" y2="12"></line>
+                    <line x1="4.6" y1="4.6" x2="6.3" y2="6.3"></line>
+                    <line x1="17.7" y1="17.7" x2="19.4" y2="19.4"></line>
+                    <line x1="4.6" y1="19.4" x2="6.3" y2="17.7"></line>
+                    <line x1="17.7" y1="6.3" x2="19.4" y2="4.6"></line>
+                  </g>
+                </svg>
+              </span>
+              <span class="theme-switch-track-icon track-moon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20.5 13.3A8.6 8.6 0 1110.7 3.5a6.7 6.7 0 009.8 9.8z"></path>
+                  <path class="moon-spark" d="M18.4 5.2l0.5 1.3 1.3 0.5-1.3 0.5-0.5 1.3-0.5-1.3-1.3-0.5 1.3-0.5z"></path>
+                </svg>
+              </span>
+            </span>
+
+            <span class="theme-switch-knob">
+              <span class="knob-icon knob-sun">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4.2"></circle>
+                  <g class="sun-rays">
+                    <line x1="12" y1="1.6" x2="12" y2="4"></line>
+                    <line x1="12" y1="20" x2="12" y2="22.4"></line>
+                    <line x1="1.6" y1="12" x2="4" y2="12"></line>
+                    <line x1="20" y1="12" x2="22.4" y2="12"></line>
+                    <line x1="4.6" y1="4.6" x2="6.3" y2="6.3"></line>
+                    <line x1="17.7" y1="17.7" x2="19.4" y2="19.4"></line>
+                    <line x1="4.6" y1="19.4" x2="6.3" y2="17.7"></line>
+                    <line x1="17.7" y1="6.3" x2="19.4" y2="4.6"></line>
+                  </g>
+                </svg>
+              </span>
+              <span class="knob-icon knob-moon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20.5 13.3A8.6 8.6 0 1110.7 3.5a6.7 6.7 0 009.8 9.8z"></path>
+                  <path class="moon-spark" d="M18.4 5.2l0.5 1.3 1.3 0.5-1.3 0.5-0.5 1.3-0.5-1.3-1.3-0.5 1.3-0.5z"></path>
+                </svg>
+              </span>
+            </span>
           </button>
         </div>
 
@@ -1401,6 +1575,11 @@
       'salary / bonus receivable': '#2E9E7B', 'tax refund receivable': '#3F8FB0',
       'rental income receivable': '#9A7B4F', 'business accounts receivable': '#4F7CAC',
 
+      'china bank loan': '#D71A21', 'chinabank': '#D71A21', 'china bank': '#D71A21',
+      'china bank savings': '#D71A21',
+      'city savings loan': '#5B2D8E', 'citysavings': '#5B2D8E', 'city savings': '#5B2D8E',
+      'city savings bank': '#5B2D8E',
+
       'gcash': '#0072CE', 'gcash jr': '#0072CE',
       'maya': '#00C16E', 'maya savings': '#00C16E', 'maya investment funds': '#00C16E',
       'grabpay': '#00B14F',
@@ -1558,6 +1737,8 @@
       { name: 'Metrobank Loan', category: 'Loans' },
       { name: 'LandBank Loan', category: 'Loans' },
       { name: 'Security Bank Loan', category: 'Loans' },
+      { name: 'China Bank Loan', category: 'Loans' },
+      { name: 'City Savings Loan', category: 'Loans' },
       { name: 'SSS Salary Loan', category: 'Loans' },
       { name: 'Pag-IBIG Housing / Calamity Loan', category: 'Loans' },
       { name: 'Home Credit Philippines', category: 'Loans' },
@@ -1644,8 +1825,138 @@
       renderApp();
     }
 
+    /* ==========================================================================
+       PRESS-AND-HOLD REORDERING OF ACCOUNT TILES
+       Hold a tile for LONG_PRESS_MS, then drag it over its neighbours to
+       rearrange. Touch and mouse are handled with one code path.
+
+       Two details this has to get right:
+        - A short tap must still open the editor, so the click is only
+          swallowed when a hold actually turned into a reorder.
+        - On touch, the page would otherwise scroll under the finger. The
+          touchmove listener is registered non-passive so preventDefault()
+          can suppress the scroll once a hold has been recognised.
+       ========================================================================== */
+    const LONG_PRESS_MS = 400;
+    const MOVE_CANCEL_PX = 10;
+    let holdState = null;
+    let suppressNextTileClick = false;
+
+    function pointFromEvent(e) {
+      const t = e.touches && e.touches[0] ? e.touches[0] : (e.changedTouches && e.changedTouches[0]);
+      return t ? { x: t.clientX, y: t.clientY } : { x: e.clientX, y: e.clientY };
+    }
+
+    function initAccountReorder() {
+      const grid = document.getElementById('walletsList');
+      if (!grid || grid.dataset.reorderReady === '1') return;
+      grid.dataset.reorderReady = '1';
+
+      grid.addEventListener('mousedown', onHoldStart);
+      grid.addEventListener('touchstart', onHoldStart, { passive: true });
+      grid.addEventListener('touchmove', onHoldMove, { passive: false });
+      window.addEventListener('mousemove', onHoldMove);
+      grid.addEventListener('touchend', onHoldEnd);
+      grid.addEventListener('touchcancel', onHoldEnd);
+      window.addEventListener('mouseup', onHoldEnd);
+
+      /* Capture phase: cancels the tap-to-edit click that a drag would
+         otherwise trigger when the finger lifts. */
+      grid.addEventListener('click', e => {
+        if (suppressNextTileClick) {
+          suppressNextTileClick = false;
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      }, true);
+    }
+
+    function onHoldStart(e) {
+      const tile = e.target.closest ? e.target.closest('.entry-tile[data-acc-id]') : null;
+      if (!tile) return;
+      /* Let the delete button behave like a button. */
+      if (e.target.closest('button')) return;
+      if (userAccounts.length < 2) return;
+
+      const p = pointFromEvent(e);
+      holdState = {
+        tile,
+        grid: document.getElementById('walletsList'),
+        startX: p.x,
+        startY: p.y,
+        active: false,
+        timer: setTimeout(() => activateHold(), LONG_PRESS_MS)
+      };
+    }
+
+    function activateHold() {
+      if (!holdState) return;
+      holdState.active = true;
+      holdState.tile.classList.add('tile-reordering');
+      holdState.grid.classList.add('reorder-mode');
+      if (navigator.vibrate) navigator.vibrate(15);
+    }
+
+    function onHoldMove(e) {
+      if (!holdState) return;
+      const p = pointFromEvent(e);
+
+      if (!holdState.active) {
+        /* Moved before the hold registered — treat it as a scroll, not a drag. */
+        if (Math.abs(p.x - holdState.startX) > MOVE_CANCEL_PX ||
+            Math.abs(p.y - holdState.startY) > MOVE_CANCEL_PX) {
+          clearTimeout(holdState.timer);
+          holdState = null;
+        }
+        return;
+      }
+
+      /* Hold is active: this gesture belongs to us, not to the scroller. */
+      if (e.cancelable) e.preventDefault();
+
+      const under = document.elementFromPoint(p.x, p.y);
+      const target = under && under.closest ? under.closest('.entry-tile[data-acc-id]') : null;
+      if (!target || target === holdState.tile || target.parentElement !== holdState.grid) return;
+
+      /* Insert before or after depending on approach direction. */
+      const tiles = Array.from(holdState.grid.querySelectorAll('.entry-tile[data-acc-id]'));
+      const from = tiles.indexOf(holdState.tile);
+      const to = tiles.indexOf(target);
+      if (from < to) target.after(holdState.tile);
+      else target.before(holdState.tile);
+    }
+
+    function onHoldEnd() {
+      if (!holdState) return;
+      clearTimeout(holdState.timer);
+
+      if (holdState.active) {
+        holdState.tile.classList.remove('tile-reordering');
+        holdState.grid.classList.remove('reorder-mode');
+
+        /* Commit the on-screen order back to the data. */
+        const order = Array.from(holdState.grid.querySelectorAll('.entry-tile[data-acc-id]'))
+          .map(el => Number(el.dataset.accId));
+        const reordered = [];
+        order.forEach(id => {
+          const acc = userAccounts.find(a => a.id === id);
+          if (acc) reordered.push(acc);
+        });
+        /* Anything not represented on screen keeps its place at the end. */
+        userAccounts.forEach(a => { if (!reordered.includes(a)) reordered.push(a); });
+        userAccounts = reordered;
+
+        suppressNextTileClick = true;
+        autoSave();
+        renderApp();
+      }
+
+      holdState = null;
+    }
+
     function initApp() {
       normalizeDebts();
+      initAccountReorder();
       applyTheme(currentTheme);
       updateEyeIcon();
       syncSettingsInputs();
@@ -2469,21 +2780,11 @@
 
     function applyTheme(theme) {
       currentTheme = theme;
+      /* The switch itself is styled entirely off this class. */
       document.body.classList.toggle('light-theme', currentTheme === 'light');
-      setThemeIcon();
       localStorage.setItem('moneytor_theme', currentTheme);
     }
 
-    /* Bare sun / moon glyphs for the icon-only theme switch. The icon shows
-       the mode you'd switch TO, which is how a theme toggle normally reads. */
-    const SUN_PATH = 'M12 17a5 5 0 100-10 5 5 0 000 10zm0-13a1 1 0 011 1v1a1 1 0 11-2 0V5a1 1 0 011-1zm0 14a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM4 11h1a1 1 0 110 2H4a1 1 0 110-2zm15 0h1a1 1 0 110 2h-1a1 1 0 110-2zM6.3 4.9l.7.7a1 1 0 01-1.4 1.4l-.7-.7a1 1 0 011.4-1.4zm11 11l.7.7a1 1 0 01-1.4 1.4l-.7-.7a1 1 0 011.4-1.4zm.7-11a1 1 0 010 1.4l-.7.7a1 1 0 01-1.4-1.4l.7-.7a1 1 0 011.4 0zm-11 11a1 1 0 010 1.4l-.7.7a1 1 0 01-1.4-1.4l.7-.7a1 1 0 011.4 0z';
-    const MOON_PATH = 'M12.3 3a1 1 0 00-1.1 1.4A7 7 0 0119.6 13a1 1 0 001.4 1.2A8 8 0 1112.3 3z';
-
-    function setThemeIcon() {
-      const icon = document.getElementById('themeIcon');
-      if (!icon) return;
-      icon.innerHTML = `<path d="${currentTheme === 'dark' ? SUN_PATH : MOON_PATH}"></path>`;
-    }
 
     function toggleTheme() {
       applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
@@ -2587,7 +2888,7 @@
       const walletsContainer = document.getElementById('walletsList');
 
       walletsContainer.innerHTML = userAccounts.map(acc => `
-        <div class="entry-tile entry-tile-clickable" title="Edit account" onclick="openEditAccountModal(${acc.id})">
+        <div class="entry-tile entry-tile-clickable" data-acc-id="${acc.id}" title="Edit account" onclick="openEditAccountModal(${acc.id})">
           <div class="entry-tile-head">
             <div class="wallet-brand-meta" style="min-width:0;">
               <img src="${getAccountIconDataUri(acc.name, acc.category)}" class="wallet-icon-img" alt="" />
@@ -2629,12 +2930,11 @@
         const percent = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0;
         const over = spent > limit;
         return `
-          <div class="entry-tile">
+          <div class="entry-tile entry-tile-clickable" title="Edit budget" onclick="openBudgetModal('${escAttr(cat)}')">
             <div class="entry-tile-head">
               <span class="entry-tile-title">${cat}</span>
               <div class="btn-group-sm">
-                <button class="btn-icon-sm" title="Edit budget" onclick="openBudgetModal('${escAttr(cat)}')">✎</button>
-                <button class="btn-icon-sm danger" title="Remove budget" onclick="deleteBudget('${escAttr(cat)}')">✕</button>
+                <button class="btn-icon-sm danger" title="Remove budget" onclick="event.stopPropagation(); deleteBudget('${escAttr(cat)}')">✕</button>
               </div>
             </div>
             <span class="entry-tile-sub">${maskAmount(spent)} / ${maskAmount(limit)}</span>
@@ -2659,12 +2959,11 @@
       goalListContainer.innerHTML = goals.map(goal => {
         const percent = goal.target > 0 ? Math.min(100, Math.round(((goal.saved || 0) / goal.target) * 100)) : 0;
         return `
-          <div class="entry-tile">
+          <div class="entry-tile entry-tile-clickable" title="Edit goal" onclick="openGoalModal(${goal.id})">
             <div class="entry-tile-head">
               <span class="entry-tile-title">${goal.title}</span>
               <div class="btn-group-sm">
-                <button class="btn-icon-sm" title="Edit goal" onclick="openGoalModal(${goal.id})">✎</button>
-                <button class="btn-icon-sm danger" title="Remove goal" onclick="deleteGoal(${goal.id})">✕</button>
+                <button class="btn-icon-sm danger" title="Remove goal" onclick="event.stopPropagation(); deleteGoal(${goal.id})">✕</button>
               </div>
             </div>
             <span class="entry-tile-sub">${maskAmount(goal.saved || 0)} / ${maskAmount(goal.target)}</span>
@@ -2672,7 +2971,7 @@
               <div class="hero-progress-fill" style="width: ${percent}%;"></div>
             </div>
             <span class="entry-tile-meta">${percent}% Achieved${goal.targetDate ? ` • by ${formatDate(goal.targetDate)}` : ''}</span>
-            <button class="entry-tile-action" onclick="openDepositModal(${goal.id})">+ Deposit</button>
+            <button class="entry-tile-action" onclick="event.stopPropagation(); openDepositModal(${goal.id})">+ Deposit</button>
           </div>
         `;
       }).join('');
@@ -2699,12 +2998,11 @@
         if (debt.apr) metaBits.push(`${debt.apr}% interest`);
         if (debt.monthly) metaBits.push(`${maskAmount(debt.monthly)}/mo`);
         return `
-          <div class="entry-tile">
+          <div class="entry-tile entry-tile-clickable" title="Edit loan" onclick="openEditDebtModal(${debt.id})">
             <div class="entry-tile-head">
               <span class="entry-tile-title">${debt.title}</span>
               <div class="btn-group-sm">
-                <button class="btn-icon-sm" title="Edit loan" onclick="openEditDebtModal(${debt.id})">✎</button>
-                <button class="btn-icon-sm danger" title="Remove loan" onclick="deleteDebt(${debt.id})">✕</button>
+                <button class="btn-icon-sm danger" title="Remove loan" onclick="event.stopPropagation(); deleteDebt(${debt.id})">✕</button>
               </div>
             </div>
             <span class="entry-tile-sub">${maskAmount(remaining)} / ${maskAmount(total)}</span>
@@ -2712,7 +3010,7 @@
               <div class="hero-progress-fill" style="width: ${paidOff}%;"></div>
             </div>
             <span class="entry-tile-meta">${metaBits.join(' • ')}</span>
-            <button class="entry-tile-action" onclick="openPayDebtModal(${debt.id})">Pay Bill</button>
+            <button class="entry-tile-action" onclick="event.stopPropagation(); openPayDebtModal(${debt.id})">Pay Bill</button>
           </div>
         `;
       }).join('');
@@ -2751,15 +3049,14 @@
         if (tx.type === 'transfer' && tx.toAccount) walletMeta = `${tx.account} ➔ ${tx.toAccount}`;
 
         txListContainer.insertAdjacentHTML('beforeend', `
-          <div class="tx-item">
+          <div class="tx-item tx-item-clickable" title="Edit transaction" onclick="openTxModal(${tx.id})">
             <div class="tx-info">
               <div class="tx-title">${tx.desc}</div>
               <span class="tx-meta">${walletMeta} • ${tx.category} • ${tx.date || 'No Date'}</span>
             </div>
             <div style="display:flex; align-items:center;">
               <span class="tx-amount ${tx.type}">${typeSymbol}${formatAmount(tx.amount)}</span>
-              <button class="btn-icon" style="margin-left:8px;" title="Edit transaction" onclick="openTxModal(${tx.id})">✎</button>
-              <button class="btn-icon" title="Delete transaction" onclick="deleteTransaction(${tx.id})">✕</button>
+              <button class="btn-icon" style="margin-left:8px;" title="Delete transaction" onclick="event.stopPropagation(); deleteTransaction(${tx.id})">✕</button>
             </div>
           </div>
         `);
